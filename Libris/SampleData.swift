@@ -2,9 +2,9 @@
 //  SampleData.swift
 //  Libris
 //
-//  A small set of well-known books used to seed an empty library once, so the
-//  app has something to show on first launch. Safe to delete if you don't want
-//  sample data — see the one-time seed in ContentView.
+//  A small set of well-known books the user can load into an empty library
+//  from the empty-state "Load Sample Books" button in ContentView. Safe to
+//  delete if you don't want sample data.
 //
 
 import Foundation
@@ -31,9 +31,9 @@ enum SampleData {
                 author: "Ursula K. Le Guin",
                 bookDescription: "An envoy to an icebound world must navigate a society without fixed gender to broker an interstellar alliance.",
                 genre: "Science Fiction",
-                rating: 5,
-                goodreadsURL: "https://www.goodreads.com/book/show/18423.The_Left_Hand_of_Darkness",
-                amazonURL: "https://www.amazon.com/dp/0441478123",
+                rating: 4.3,
+                goodreadsURL: "www.goodreads.com/book/show/18423.The_Left_Hand_of_Darkness",
+                amazonURL: "www.amazon.com/dp/0441478123",
                 coverImageURL: "https://covers.openlibrary.org/b/isbn/9780441478125-L.jpg",
                 note: "Still the high-water mark for the genre.",
                 tags: ["Award Winner"],

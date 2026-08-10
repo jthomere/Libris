@@ -19,10 +19,6 @@ struct ContentView: View {
     @State private var genreFilter: String? = nil
     @State private var showingBatchImport = false
 
-    // Seeds sample books exactly once, and only into an empty library, so it
-    // never duplicates or overwrites real (or synced) data.
-    @AppStorage("hasSeededSampleData") private var hasSeededSampleData = false
-
     // Adaptive grid of book cards.
     private let columns = [GridItem(.adaptive(minimum: 360, maximum: 520), spacing: 16)]
 
@@ -58,8 +54,10 @@ struct ContentView: View {
                     importBooks(newBooks)
                 }
             }
-            .task {
-                seedSampleDataIfNeeded()
+            .onChange(of: availableGenres) { _, genres in
+                if let genreFilter, !genres.contains(genreFilter) {
+                    self.genreFilter = nil
+                }
             }
         }
         .frame(minWidth: 640, minHeight: 480)
@@ -158,6 +156,12 @@ struct ContentView: View {
                     Text(books.isEmpty
                          ? "Add a book or import a batch to get started."
                          : "Try adjusting your search or filters.")
+                } actions: {
+                    if books.isEmpty {
+                        Button("Load Sample Books") {
+                            loadSampleBooks()
+                        }
+                    }
                 }
                 .padding(.top, 60)
             } else {
@@ -185,17 +189,7 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return books.filter { book in
-            if let statusFilter, book.status != statusFilter { return false }
-            if let genreFilter, book.genre != genreFilter { return false }
-            if !query.isEmpty {
-                let matchesTitle = book.title.lowercased().contains(query)
-                let matchesAuthor = book.author.lowercased().contains(query)
-                if !matchesTitle && !matchesAuthor { return false }
-            }
-            return true
-        }
+        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter)
     }
 
     private func count(for status: BookStatus) -> Int {
@@ -215,15 +209,14 @@ struct ContentView: View {
         }
     }
 
-    /// Seeds the library with sample books the first time the app runs with an
-    /// empty store. Guarded by a persisted flag so it runs at most once and
-    /// never re-adds books after the user has started managing their own list.
-    private func seedSampleDataIfNeeded() {
-        guard !hasSeededSampleData, books.isEmpty else { return }
-        for book in SampleData.makeBooks() {
-            modelContext.insert(book)
+    /// Inserts the built-in sample books. Triggered explicitly from the empty
+    /// state, so it never runs on its own and can't duplicate a synced library.
+    private func loadSampleBooks() {
+        withAnimation {
+            for book in SampleData.makeBooks() {
+                modelContext.insert(book)
+            }
         }
-        hasSeededSampleData = true
     }
 
     /// Inserts newly created books. Existing books are never touched, so this
@@ -234,6 +227,22 @@ struct ContentView: View {
             for book in newBooks {
                 modelContext.insert(book)
             }
+        }
+    }
+}
+
+enum BookFilter {
+    static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?) -> [Book] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return books.filter { book in
+            if let status, book.status != status { return false }
+            if let genre, book.genre != genre { return false }
+            if !query.isEmpty {
+                let matchesTitle = book.title.lowercased().contains(query)
+                let matchesAuthor = book.author.lowercased().contains(query)
+                if !matchesTitle && !matchesAuthor { return false }
+            }
+            return true
         }
     }
 }
