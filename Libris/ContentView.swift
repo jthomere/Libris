@@ -19,6 +19,15 @@ struct ContentView: View {
     @State private var genreFilter: String? = nil
     @State private var showingBatchImport = false
 
+    // Drives the editing sheet: which existing book is being edited (nil = none).
+    @State private var editingBook: Book? = nil
+    // Drives the editing sheet for a brand-new book that isn't inserted into the
+    // store until the user taps Done.
+    @State private var newBook: Book? = nil
+
+    // The book awaiting delete confirmation (nil = no confirmation showing).
+    @State private var bookToDelete: Book? = nil
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -38,7 +47,8 @@ struct ContentView: View {
                 BookGridView(
                     books: filteredBooks,
                     libraryIsEmpty: books.isEmpty,
-                    onDelete: deleteBook,
+                    onEdit: { editingBook = $0 },
+                    onDelete: { bookToDelete = $0 },
                     onLoadSample: loadSampleBooks
                 )
             }
@@ -65,6 +75,33 @@ struct ContentView: View {
                     importBooks(newBooks)
                 }
             }
+            .sheet(item: $editingBook) { book in
+                BookEditorView(
+                    book: book,
+                    navigationTitle: "Edit Book",
+                    onCancel: { editingBook = nil },
+                    onSave: { editingBook = nil }
+                )
+            }
+            .sheet(item: $newBook) { book in
+                BookEditorView(
+                    book: book,
+                    navigationTitle: "New Book",
+                    onCancel: { newBook = nil },
+                    onSave: {
+                        modelContext.insert(book)
+                        newBook = nil
+                    }
+                )
+            }
+            .alert(deleteAlertTitle, isPresented: showingDeleteConfirmation, presenting: bookToDelete) { book in
+                Button("Delete", role: .destructive) {
+                    deleteBook(book)
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: { _ in
+                Text("This can’t be undone.")
+            }
             .onChange(of: availableGenres) { _, genres in
                 if let genreFilter, !genres.contains(genreFilter) {
                     self.genreFilter = nil
@@ -85,6 +122,21 @@ struct ContentView: View {
         !searchText.isEmpty || statusFilter != nil || genreFilter != nil
     }
 
+    /// Bridges the optional `bookToDelete` to the alert's `isPresented`, clearing
+    /// the pending book when the alert is dismissed.
+    private var showingDeleteConfirmation: Binding<Bool> {
+        Binding(
+            get: { bookToDelete != nil },
+            set: { if !$0 { bookToDelete = nil } }
+        )
+    }
+
+    private var deleteAlertTitle: String {
+        guard let book = bookToDelete else { return "Delete this book?" }
+        let title = book.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty ? "Delete this book?" : "Delete “\(title)”?"
+    }
+
     private var filteredBooks: [Book] {
         BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter)
     }
@@ -92,8 +144,9 @@ struct ContentView: View {
     // MARK: - Mutations
 
     private func addBook() {
-        let book = Book(title: "", author: "")
-        modelContext.insert(book)
+        // Open the editor on a fresh book; it isn't inserted until the user
+        // taps Done, so cancelling leaves the library untouched.
+        newBook = Book(title: "", author: "")
     }
 
     private func deleteBook(_ book: Book) {
