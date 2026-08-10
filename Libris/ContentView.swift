@@ -17,7 +17,7 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var statusFilter: BookStatus? = nil
     @State private var genreFilter: String? = nil
-    @State private var showingBatchImport = false
+    @State private var showingImportBooks = false
 
     // Drives the editing sheet: which existing book is being edited (nil = none).
     @State private var editingBook: Book? = nil
@@ -63,16 +63,11 @@ struct ContentView: View {
                     .help("Add a single empty book")
 
                     Button {
-                        showingBatchImport = true
+                        showingImportBooks = true
                     } label: {
-                        Label("Import Batch", systemImage: "square.and.arrow.down.on.square")
+                        Label("Import Books", systemImage: "square.and.arrow.down.on.square")
                     }
-                    .help("Add a batch of books from pasted text")
-                }
-            }
-            .sheet(isPresented: $showingBatchImport) {
-                BatchImportView(existingBooks: books) { newBooks in
-                    importBooks(newBooks)
+                    .help("Add books")
                 }
             }
             .sheet(item: $editingBook) { book in
@@ -165,16 +160,6 @@ struct ContentView: View {
         }
     }
 
-    /// Inserts newly created books. Existing books are never touched, so this
-    /// can't overwrite or corrupt the current library. Duplicate detection
-    /// happens in `BatchImportView` before this is called.
-    private func importBooks(_ newBooks: [Book]) {
-        withAnimation {
-            for book in newBooks {
-                modelContext.insert(book)
-            }
-        }
-    }
 }
 
 #Preview {
