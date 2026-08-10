@@ -86,7 +86,7 @@ struct BookCardView: View {
 
     private var coverImage: some View {
         Group {
-            if let url = URL(string: book.coverImageURL), !book.coverImageURL.isEmpty {
+            if let url = normalizedURL(book.coverImageURL) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -214,13 +214,22 @@ struct BookCardView: View {
                 .frame(width: 18)
             TextField(label, text: text)
                 .textFieldStyle(.roundedBorder)
-            if let url = URL(string: text.wrappedValue), !text.wrappedValue.isEmpty {
+            if let url = normalizedURL(text.wrappedValue) {
                 Link(destination: url) {
                     Image(systemName: "arrow.up.right.square")
                 }
                 .help("Open \(label)")
             }
         }
+    }
+
+    private func normalizedURL(_ string: String) -> URL? {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if let url = URL(string: trimmed), url.scheme != nil {
+            return url
+        }
+        return URL(string: "https://\(trimmed)")
     }
 }
 
