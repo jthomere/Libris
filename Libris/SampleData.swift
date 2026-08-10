@@ -2,9 +2,9 @@
 //  SampleData.swift
 //  Libris
 //
-//  A small set of well-known books used to seed an empty library once, so the
-//  app has something to show on first launch. Safe to delete if you don't want
-//  sample data — see the one-time seed in ContentView.
+//  A small set of well-known books the user can load into an empty library
+//  from the empty-state "Load Sample Books" button in ContentView. Safe to
+//  delete if you don't want sample data.
 //
 
 import Foundation
