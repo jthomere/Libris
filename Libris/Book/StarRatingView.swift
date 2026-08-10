@@ -5,10 +5,12 @@
 
 import SwiftUI
 
-/// A clickable 0–5 star rating control. Clicking a star sets that rating;
-/// clicking the leftmost star when the rating is already 1 clears it to 0.
+/// A 0–5 star rating control. When `isEditable`, clicking a star sets that
+/// rating; clicking the leftmost star when the rating is already 1 clears it to
+/// 0. When not editable, it's a read-only display of the current rating.
 struct StarRatingView: View {
     @Binding var rating: Double
+    var isEditable: Bool = true
 
     var body: some View {
         HStack(spacing: 3) {
@@ -16,11 +18,12 @@ struct StarRatingView: View {
                 Image(systemName: Double(index) <= rating.rounded() ? "star.fill" : "star")
                     .foregroundStyle(.yellow)
                     .onTapGesture {
+                        guard isEditable else { return }
                         let value = Double(index)
                         rating = (rating == value) ? value - 1 : value
                     }
             }
-            if rating > 0 {
+            if isEditable && rating > 0 {
                 Button {
                     rating = 0
                 } label: {

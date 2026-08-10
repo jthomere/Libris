@@ -11,6 +11,7 @@ struct BookGridView: View {
     /// Whether the underlying library is empty, distinguishing "no books yet"
     /// from "no matches for the current filters".
     let libraryIsEmpty: Bool
+    let onEdit: (Book) -> Void
     let onDelete: (Book) -> Void
     let onLoadSample: () -> Void
 
@@ -38,9 +39,11 @@ struct BookGridView: View {
             } else {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
                     ForEach(books) { book in
-                        BookCardView(book: book) {
-                            onDelete(book)
-                        }
+                        BookCardView(
+                            book: book,
+                            onEdit: { onEdit(book) },
+                            onDelete: { onDelete(book) }
+                        )
                     }
                 }
                 .padding(16)

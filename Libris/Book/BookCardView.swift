@@ -2,14 +2,18 @@
 //  BookCardView.swift
 //  Libris
 //
-//  A card that displays every field of a book. All fields are directly
-//  editable; SwiftData autosaves changes, so edits persist automatically.
+//  A read-only card that displays a book's fields. Editing happens in a
+//  separate editor sheet (see BookEditorView), reached via the pencil button,
+//  so imported books can't be changed by accident. The only interactive
+//  element is the status quick-action, which reflects the user's own workflow
+//  rather than imported metadata.
 //
 
 import SwiftUI
 
 struct BookCardView: View {
-    @Bindable var book: Book
+    let book: Book
+    var onEdit: () -> Void
     var onDelete: () -> Void
 
     var body: some View {
@@ -19,36 +23,21 @@ struct BookCardView: View {
             statusButtons
             ratingRow
 
-            labeledField("Genre") {
-                TextField("Genre", text: $book.genre)
-                    .textFieldStyle(.roundedBorder)
+            if !book.genre.isEmpty {
+                labeledValue("Genre", book.genre)
             }
-
-            labeledField("Description") {
-                TextField("Short description", text: $book.bookDescription, axis: .vertical)
-                    .lineLimit(2...5)
-                    .textFieldStyle(.roundedBorder)
+            if !book.bookDescription.isEmpty {
+                labeledValue("Description", book.bookDescription)
             }
-
-            labeledField("Note") {
-                TextField("A short note", text: $book.note, axis: .vertical)
-                    .lineLimit(1...4)
-                    .textFieldStyle(.roundedBorder)
+            if !book.note.isEmpty {
+                labeledValue("Note", book.note)
             }
-
-            labeledField("Tags") {
-                VStack(alignment: .leading, spacing: 4) {
-                    TextField("Comma-separated, e.g. Staff Pick, Bestseller", text: tagsBinding)
-                        .textFieldStyle(.roundedBorder)
-                    if !book.tags.isEmpty {
-                        tagChips
-                    }
-                }
+            if !book.tags.isEmpty {
+                labeled("Tags") { tagChips }
             }
-
-            linkField("Goodreads", systemImage: "book.closed", text: $book.goodreadsURL)
-            linkField("Amazon", systemImage: "cart", text: $book.amazonURL)
-            linkField("Cover image URL", systemImage: "photo", text: $book.coverImageURL)
+            if !linkItems.isEmpty {
+                linksRow
+            }
         }
         .padding(16)
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
@@ -58,23 +47,28 @@ struct BookCardView: View {
         )
     }
 
-    // MARK: - Header (cover + title + author + delete)
+    // MARK: - Header (cover + title + author + edit/delete)
 
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             coverImage
 
             VStack(alignment: .leading, spacing: 6) {
-                TextField("Title", text: $book.title)
+                Text(book.title.isEmpty ? "Untitled" : book.title)
                     .font(.title3.weight(.semibold))
-                    .textFieldStyle(.plain)
-                TextField("Author", text: $book.author)
+                    .foregroundStyle(book.title.isEmpty ? .secondary : .primary)
+                Text(book.author.isEmpty ? "Unknown author" : book.author)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .textFieldStyle(.plain)
             }
 
             Spacer(minLength: 0)
+
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+            }
+            .buttonStyle(.borderless)
+            .help("Edit this book")
 
             Button(role: .destructive, action: onDelete) {
                 Image(systemName: "trash")
@@ -116,7 +110,7 @@ struct BookCardView: View {
         }
     }
 
-    // MARK: - Status buttons
+    // MARK: - Status buttons (the one interactive quick-action)
 
     private var statusButtons: some View {
         HStack(spacing: 8) {
@@ -149,7 +143,7 @@ struct BookCardView: View {
         }
     }
 
-    // MARK: - Rating
+    // MARK: - Rating (read-only; imported)
 
     private var ratingRow: some View {
         HStack(spacing: 8) {
@@ -157,7 +151,7 @@ struct BookCardView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 90, alignment: .leading)
-            StarRatingView(rating: $book.rating)
+            StarRatingView(rating: .constant(book.rating), isEditable: false)
             Spacer()
             Text(String(format: "%.1f", book.rating))
                 .font(.caption.monospacedDigit())
@@ -168,7 +162,6 @@ struct BookCardView: View {
     // MARK: - Tags
 
     private var tagChips: some View {
-        // Simple wrapping row of tag chips.
         FlowLayout(spacing: 6) {
             ForEach(book.tags, id: \.self) { tag in
                 Text(tag)
@@ -180,17 +173,52 @@ struct BookCardView: View {
         }
     }
 
-    /// Two-way bridge between the `[String]` tags and a comma-separated field.
-    private var tagsBinding: Binding<String> {
-        Binding(
-            get: { Tags.format(book.tags) },
-            set: { book.tags = Tags.parse($0) }
-        )
+    // MARK: - Links (read-only)
+
+    private var linkItems: [LinkItem] {
+        var items: [LinkItem] = []
+        if let url = URLNormalizer.normalized(from: book.goodreadsURL) {
+            items.append(LinkItem(label: "Goodreads", systemImage: "book.closed", url: url))
+        }
+        if let url = URLNormalizer.normalized(from: book.amazonURL) {
+            items.append(LinkItem(label: "Amazon", systemImage: "cart", url: url))
+        }
+        if let url = URLNormalizer.normalized(from: book.coverImageURL) {
+            items.append(LinkItem(label: "Cover image", systemImage: "photo", url: url))
+        }
+        return items
     }
 
-    // MARK: - Reusable field builders
+    private var linksRow: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(linkItems) { item in
+                Link(destination: item.url) {
+                    Label(item.label, systemImage: item.systemImage)
+                        .font(.caption)
+                }
+                .help("Open \(item.label)")
+            }
+        }
+    }
 
-    private func labeledField<Content: View>(
+    private struct LinkItem: Identifiable {
+        let label: String
+        let systemImage: String
+        let url: URL
+        var id: String { label }
+    }
+
+    // MARK: - Reusable display builders
+
+    private func labeledValue(_ label: String, _ value: String) -> some View {
+        labeled(label) {
+            Text(value)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func labeled<Content: View>(
         _ label: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -199,22 +227,6 @@ struct BookCardView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             content()
-        }
-    }
-
-    private func linkField(_ label: String, systemImage: String, text: Binding<String>) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .foregroundStyle(.secondary)
-                .frame(width: 18)
-            TextField(label, text: text)
-                .textFieldStyle(.roundedBorder)
-            if let url = URLNormalizer.normalized(from: text.wrappedValue) {
-                Link(destination: url) {
-                    Image(systemName: "arrow.up.right.square")
-                }
-                .help("Open \(label)")
-            }
         }
     }
 }
