@@ -19,17 +19,28 @@ struct ContentView: View {
     @State private var genreFilter: String? = nil
     @State private var showingBatchImport = false
 
-    // Adaptive grid of book cards.
-    private let columns = [GridItem(.adaptive(minimum: 360, maximum: 520), spacing: 16)]
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                filterBar
+                FilterBarView(
+                    searchText: $searchText,
+                    statusFilter: $statusFilter,
+                    genreFilter: $genreFilter,
+                    availableGenres: availableGenres
+                )
                 Divider()
-                countsBar
+                CountsBarView(
+                    books: books,
+                    filteredCount: filteredBooks.count,
+                    isFiltering: isFiltering
+                )
                 Divider()
-                bookGrid
+                BookGridView(
+                    books: filteredBooks,
+                    libraryIsEmpty: books.isEmpty,
+                    onDelete: deleteBook,
+                    onLoadSample: loadSampleBooks
+                )
             }
             .navigationTitle("Libris")
             .toolbar {
@@ -63,120 +74,6 @@ struct ContentView: View {
         .frame(minWidth: 640, minHeight: 480)
     }
 
-    // MARK: - Filter bar
-
-    private var filterBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search title or author", text: $searchText)
-                    .textFieldStyle(.plain)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(6)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-            .frame(maxWidth: 320)
-
-            Picker("Status", selection: $statusFilter) {
-                Text("All Statuses").tag(BookStatus?.none)
-                ForEach(BookStatus.allCases) { status in
-                    Text(status.label).tag(BookStatus?.some(status))
-                }
-            }
-            .frame(maxWidth: 180)
-
-            Picker("Genre", selection: $genreFilter) {
-                Text("All Genres").tag(String?.none)
-                ForEach(availableGenres, id: \.self) { genre in
-                    Text(genre).tag(String?.some(genre))
-                }
-            }
-            .frame(maxWidth: 180)
-
-            Spacer()
-        }
-        .padding(12)
-    }
-
-    // MARK: - Counts bar
-
-    private var countsBar: some View {
-        HStack(spacing: 10) {
-            countChip(label: "Total", count: books.count, image: "books.vertical")
-            ForEach(BookStatus.allCases) { status in
-                countChip(
-                    label: status.label,
-                    count: count(for: status),
-                    image: status.systemImage
-                )
-            }
-            Spacer()
-            if isFiltering {
-                Text("\(filteredBooks.count) shown")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    private func countChip(label: String, count: Int, image: String) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: image)
-            Text(label)
-            Text("\(count)")
-                .fontWeight(.semibold)
-                .monospacedDigit()
-        }
-        .font(.callout)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(.quaternary, in: Capsule())
-    }
-
-    // MARK: - Grid
-
-    private var bookGrid: some View {
-        ScrollView {
-            if filteredBooks.isEmpty {
-                ContentUnavailableView {
-                    Label(books.isEmpty ? "No Books Yet" : "No Matches",
-                          systemImage: "books.vertical")
-                } description: {
-                    Text(books.isEmpty
-                         ? "Add a book or import a batch to get started."
-                         : "Try adjusting your search or filters.")
-                } actions: {
-                    if books.isEmpty {
-                        Button("Load Sample Books") {
-                            loadSampleBooks()
-                        }
-                    }
-                }
-                .padding(.top, 60)
-            } else {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
-                    ForEach(filteredBooks) { book in
-                        BookCardView(book: book) {
-                            deleteBook(book)
-                        }
-                    }
-                }
-                .padding(16)
-            }
-        }
-    }
-
     // MARK: - Derived data
 
     private var availableGenres: [String] {
@@ -190,10 +87,6 @@ struct ContentView: View {
 
     private var filteredBooks: [Book] {
         BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter)
-    }
-
-    private func count(for status: BookStatus) -> Int {
-        books.filter { $0.status == status }.count
     }
 
     // MARK: - Mutations
@@ -227,22 +120,6 @@ struct ContentView: View {
             for book in newBooks {
                 modelContext.insert(book)
             }
-        }
-    }
-}
-
-enum BookFilter {
-    static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?) -> [Book] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return books.filter { book in
-            if let status, book.status != status { return false }
-            if let genre, book.genre != genre { return false }
-            if !query.isEmpty {
-                let matchesTitle = book.title.lowercased().contains(query)
-                let matchesAuthor = book.author.lowercased().contains(query)
-                if !matchesTitle && !matchesAuthor { return false }
-            }
-            return true
         }
     }
 }

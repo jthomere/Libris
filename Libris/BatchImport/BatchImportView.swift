@@ -4,7 +4,8 @@
 //
 //  Adds a batch of books from pasted text. Books that already exist (matched
 //  by title + author) are skipped, so importing can never duplicate, overwrite,
-//  or corrupt the books already in the library.
+//  or corrupt the books already in the library. Parsing lives in
+//  `BatchImportParser`.
 //
 
 import SwiftUI
@@ -70,61 +71,7 @@ struct BatchImportView: View {
         .font(.callout)
     }
 
-    // MARK: - Parsing
-
-    private struct ParseResult {
-        var toAdd: [Book]
-        var duplicateCount: Int
-    }
-
-    /// Parses the pasted text, skipping blank lines and any book whose
-    /// title+author already exists in the library or earlier in the paste.
-    private var parsed: ParseResult {
-        var seen = Set(existingBooks.map { dedupeKey(title: $0.title, author: $0.author) })
-
-        var toAdd: [Book] = []
-        var duplicates = 0
-
-        for rawLine in pastedText.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            guard !line.isEmpty else { continue }
-
-            let fields = line.components(separatedBy: "|").map {
-                $0.trimmingCharacters(in: .whitespaces)
-            }
-
-            let title = fields.first ?? ""
-            guard !title.isEmpty else { continue }
-
-            let author = fields.count > 1 ? fields[1] : ""
-            let genre = fields.count > 2 ? fields[2] : ""
-            let rating = fields.count > 3 ? (Double(fields[3]) ?? 0) : 0
-            let tags: [String] = fields.count > 4
-                ? fields[4].split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-                : []
-
-            let key = dedupeKey(title: title, author: author)
-            if seen.contains(key) {
-                duplicates += 1
-                continue
-            }
-            seen.insert(key)
-
-            toAdd.append(
-                Book(
-                    title: title,
-                    author: author,
-                    genre: genre,
-                    rating: min(max(rating, 0), 5),
-                    tags: tags
-                )
-            )
-        }
-
-        return ParseResult(toAdd: toAdd, duplicateCount: duplicates)
-    }
-
-    private func dedupeKey(title: String, author: String) -> String {
-        "\(title.lowercased())|\(author.lowercased())"
+    private var parsed: BatchImportParser.Result {
+        BatchImportParser.parse(pastedText, existingBooks: existingBooks)
     }
 }
