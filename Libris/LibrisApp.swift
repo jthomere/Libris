@@ -10,10 +10,11 @@ import SwiftData
 struct LibrisApp: App {
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([Book.self])
+        let enableCloudKitSync = false
         let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .private("iCloud.org.thomere.Libris")
+            cloudKitDatabase: enableCloudKitSync ? .private("iCloud.org.thomere.Libris") : .none
         )
 
         do {
