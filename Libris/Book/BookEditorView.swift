@@ -2,13 +2,7 @@
 //  BookEditorView.swift
 //  Libris
 //
-//  A modal sheet for editing a single book's imported metadata. It edits a
-//  local draft copy of each field so that Cancel truly discards changes and
-//  Done writes them back to the book in one step. Status is intentionally not
-//  edited here — it stays a quick-action on the card.
-//
-//  Each field shows a small caption label above a bordered input box. The
-//  descriptive strings are prompts, so they appear only while a field is empty.
+//  A modal sheet for editing a book's fields.
 //
 
 import SwiftUI
@@ -140,8 +134,8 @@ struct BookEditorView: View {
         book.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         book.author = author.trimmingCharacters(in: .whitespacesAndNewlines)
         book.genre = genre.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.bookDescription = bookDescription
-        book.note = note
+        book.bookDescription = bookDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        book.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
         book.tags = Tags.parse(tagsText)
         book.rating = rating
         book.goodreadsURL = goodreadsURL.trimmingCharacters(in: .whitespacesAndNewlines)

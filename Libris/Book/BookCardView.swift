@@ -2,11 +2,7 @@
 //  BookCardView.swift
 //  Libris
 //
-//  A read-only card that displays a book's fields. Editing happens in a
-//  separate editor sheet (see BookEditorView), reached via the pencil button,
-//  so imported books can't be changed by accident. The only interactive
-//  element is the status quick-action, which reflects the user's own workflow
-//  rather than imported metadata.
+//  A read-only card that displays a book's fields.
 //
 
 import SwiftUI
