@@ -86,7 +86,7 @@ struct BookCardView: View {
 
     private var coverImage: some View {
         Group {
-            if let url = normalizedURL(book.coverImageURL) {
+            if let url = URLNormalizer.normalized(from: book.coverImageURL) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -183,13 +183,8 @@ struct BookCardView: View {
     /// Two-way bridge between the `[String]` tags and a comma-separated field.
     private var tagsBinding: Binding<String> {
         Binding(
-            get: { book.tags.joined(separator: ", ") },
-            set: { newValue in
-                book.tags = newValue
-                    .split(separator: ",")
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
-            }
+            get: { Tags.format(book.tags) },
+            set: { book.tags = Tags.parse($0) }
         )
     }
 
@@ -214,7 +209,7 @@ struct BookCardView: View {
                 .frame(width: 18)
             TextField(label, text: text)
                 .textFieldStyle(.roundedBorder)
-            if let url = normalizedURL(text.wrappedValue) {
+            if let url = URLNormalizer.normalized(from: text.wrappedValue) {
                 Link(destination: url) {
                     Image(systemName: "arrow.up.right.square")
                 }
@@ -222,14 +217,29 @@ struct BookCardView: View {
             }
         }
     }
+}
 
-    private func normalizedURL(_ string: String) -> URL? {
+enum URLNormalizer {
+    static func normalized(from string: String) -> URL? {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         if let url = URL(string: trimmed), url.scheme != nil {
             return url
         }
         return URL(string: "https://\(trimmed)")
+    }
+}
+
+enum Tags {
+    static func parse(_ string: String) -> [String] {
+        string
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    static func format(_ tags: [String]) -> String {
+        tags.joined(separator: ", ")
     }
 }
 

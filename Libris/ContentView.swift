@@ -189,17 +189,7 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return books.filter { book in
-            if let statusFilter, book.status != statusFilter { return false }
-            if let genreFilter, book.genre != genreFilter { return false }
-            if !query.isEmpty {
-                let matchesTitle = book.title.lowercased().contains(query)
-                let matchesAuthor = book.author.lowercased().contains(query)
-                if !matchesTitle && !matchesAuthor { return false }
-            }
-            return true
-        }
+        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter)
     }
 
     private func count(for status: BookStatus) -> Int {
@@ -237,6 +227,22 @@ struct ContentView: View {
             for book in newBooks {
                 modelContext.insert(book)
             }
+        }
+    }
+}
+
+enum BookFilter {
+    static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?) -> [Book] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return books.filter { book in
+            if let status, book.status != status { return false }
+            if let genre, book.genre != genre { return false }
+            if !query.isEmpty {
+                let matchesTitle = book.title.lowercased().contains(query)
+                let matchesAuthor = book.author.lowercased().contains(query)
+                if !matchesTitle && !matchesAuthor { return false }
+            }
+            return true
         }
     }
 }
