@@ -54,6 +54,11 @@ struct ContentView: View {
                     importBooks(newBooks)
                 }
             }
+            .onChange(of: availableGenres) { _, genres in
+                if let genreFilter, !genres.contains(genreFilter) {
+                    self.genreFilter = nil
+                }
+            }
         }
         .frame(minWidth: 640, minHeight: 480)
     }
