@@ -244,8 +244,8 @@ struct ContentView: View {
                 var parts = [added == 1 ? "Added 1 book." : "Added \(added) books."]
                 if duplicates > 0 {
                     parts.append(duplicates == 1
-                        ? "Skipped 1 duplicate already in your library."
-                        : "Skipped \(duplicates) duplicates already in your library.")
+                        ? "Skipped 1 duplicate."
+                        : "Skipped \(duplicates) duplicates.")
                 }
                 return parts.joined(separator: " ")
             case .failure(let message):
