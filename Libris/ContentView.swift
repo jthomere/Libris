@@ -18,6 +18,9 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var statusFilter: BookStatus? = nil
     @State private var genreFilter: String? = nil
+    // Whether to hide books marked To Remove from the default ("All Statuses")
+    // view. On by default so those books stay out of the way until wanted.
+    @State private var hideToRemove = true
     @State private var showingImportBooks = false
 
     // Drives the post-import result alert (success summary or failure).
@@ -32,20 +35,22 @@ struct ContentView: View {
     // The book awaiting delete confirmation (nil = no confirmation showing).
     @State private var bookToDelete: Book? = nil
 
+    // Drives the confirmation for permanently deleting every To Remove book.
+    @State private var confirmingDeleteToRemove = false
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 FilterBarView(
                     searchText: $searchText,
-                    statusFilter: $statusFilter,
                     genreFilter: $genreFilter,
                     availableGenres: availableGenres
                 )
                 Divider()
                 CountsBarView(
                     books: books,
-                    filteredCount: filteredBooks.count,
-                    isFiltering: isFiltering
+                    statusFilter: $statusFilter,
+                    hideToRemove: $hideToRemove
                 )
                 Divider()
                 BookGridView(
@@ -72,6 +77,16 @@ struct ContentView: View {
                         Label("Import Books", systemImage: "square.and.arrow.down.on.square")
                     }
                     .help("Add books")
+
+                    if statusFilter == .toRemove {
+                        Button(role: .destructive) {
+                            confirmingDeleteToRemove = true
+                        } label: {
+                            Label("Delete All…", systemImage: "trash")
+                        }
+                        .help("Permanently delete every book marked To Remove")
+                        .disabled(toRemoveBooks.isEmpty)
+                    }
                 }
             }
             .sheet(item: $editingBook) { book in
@@ -108,6 +123,15 @@ struct ContentView: View {
             } message: { _ in
                 Text("This can’t be undone.")
             }
+            .alert("Delete Books to Remove?", isPresented: $confirmingDeleteToRemove) {
+                Button("Delete", role: .destructive) {
+                    deleteAllToRemove()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                let count = toRemoveBooks.count
+                Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") marked To Remove. This can’t be undone.")
+            }
             .alert(importAlert?.title ?? "", isPresented: showingImportAlert, presenting: importAlert) { _ in
                 Button("OK", role: .cancel) { }
             } message: { alert in
@@ -129,8 +153,8 @@ struct ContentView: View {
         return genres.sorted()
     }
 
-    private var isFiltering: Bool {
-        !searchText.isEmpty || statusFilter != nil || genreFilter != nil
+    private var toRemoveBooks: [Book] {
+        books.filter { $0.status == .toRemove }
     }
 
     /// Bridges the optional `bookToDelete` to the alert's `isPresented`, clearing
@@ -158,7 +182,7 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter)
+        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter, hideToRemove: hideToRemove)
     }
 
     // MARK: - Mutations
@@ -172,6 +196,15 @@ struct ContentView: View {
     private func deleteBook(_ book: Book) {
         withAnimation {
             modelContext.delete(book)
+        }
+    }
+
+    /// Permanently deletes every book marked To Remove.
+    private func deleteAllToRemove() {
+        withAnimation {
+            for book in toRemoveBooks {
+                modelContext.delete(book)
+            }
         }
     }
 

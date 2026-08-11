@@ -108,8 +108,10 @@ struct BookCardView: View {
 
     // MARK: - Status buttons (the one interactive quick-action)
 
+    private let statusColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+
     private var statusButtons: some View {
-        HStack(spacing: 8) {
+        LazyVGrid(columns: statusColumns, spacing: 8) {
             ForEach(BookStatus.actionable) { status in
                 let isActive = book.status == status
                 Button {
@@ -117,6 +119,7 @@ struct BookCardView: View {
                 } label: {
                     Label(status.label, systemImage: status.systemImage)
                         .font(.caption)
+                        .lineLimit(1)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -132,10 +135,13 @@ struct BookCardView: View {
 
     private func statusTint(_ status: BookStatus) -> Color {
         switch status {
-        case .toRead:   return .blue
-        case .read:     return .green
-        case .toRemove: return .red
-        case .unsorted: return .secondary
+        case .notSure:      return .teal
+        case .toRead:       return .blue
+        case .didNotFinish: return .orange
+        case .gaveUp:       return .brown
+        case .read:         return .green
+        case .toRemove:     return .red
+        case .unsorted:     return .secondary
         }
     }
 
