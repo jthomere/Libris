@@ -16,7 +16,7 @@ struct BookGridView: View {
     let onLoadSample: () -> Void
 
     // Adaptive grid of book cards.
-    private let columns = [GridItem(.adaptive(minimum: 360, maximum: 520), spacing: 16)]
+    private let columns = [GridItem(.adaptive(minimum: 440, maximum: 600), spacing: 16)]
 
     var body: some View {
         ScrollView {
@@ -46,7 +46,8 @@ struct BookGridView: View {
                         )
                     }
                 }
-                .padding(16)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
             }
         }
     }

@@ -41,7 +41,7 @@ struct BookStatusTests {
     }
 
     @Test func actionableExcludesUnsorted() {
-        #expect(BookStatus.actionable == [.toRead, .read, .toRemove])
+        #expect(BookStatus.actionable == [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .toRemove])
         #expect(!BookStatus.actionable.contains(.unsorted))
     }
 }

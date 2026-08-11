@@ -6,12 +6,12 @@
 import Foundation
 
 enum BookFilter {
-    static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?, includeToRemove: Bool) -> [Book] {
+    static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?, hideToRemove: Bool) -> [Book] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return books.filter { book in
             if let status {
                 if book.status != status { return false }
-            } else if !includeToRemove && book.status == .toRemove {
+            } else if hideToRemove && book.status == .toRemove {
                 return false
             }
             if let genre, book.genre != genre { return false }

@@ -18,9 +18,9 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var statusFilter: BookStatus? = nil
     @State private var genreFilter: String? = nil
-    // Whether to show books marked To Remove in the default ("All Statuses")
-    // view. Off by default so those books stay out of the way until wanted.
-    @State private var includeToRemove = false
+    // Whether to hide books marked To Remove from the default ("All Statuses")
+    // view. On by default so those books stay out of the way until wanted.
+    @State private var hideToRemove = true
     @State private var showingImportBooks = false
 
     // Drives the post-import result alert (success summary or failure).
@@ -43,16 +43,14 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 FilterBarView(
                     searchText: $searchText,
-                    statusFilter: $statusFilter,
                     genreFilter: $genreFilter,
-                    includeToRemove: $includeToRemove,
                     availableGenres: availableGenres
                 )
                 Divider()
                 CountsBarView(
                     books: books,
-                    filteredCount: filteredBooks.count,
-                    isFiltering: isFiltering
+                    statusFilter: $statusFilter,
+                    hideToRemove: $hideToRemove
                 )
                 Divider()
                 BookGridView(
@@ -155,10 +153,6 @@ struct ContentView: View {
         return genres.sorted()
     }
 
-    private var isFiltering: Bool {
-        !searchText.isEmpty || statusFilter != nil || genreFilter != nil
-    }
-
     private var toRemoveBooks: [Book] {
         books.filter { $0.status == .toRemove }
     }
@@ -188,7 +182,7 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter, includeToRemove: includeToRemove)
+        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter, hideToRemove: hideToRemove)
     }
 
     // MARK: - Mutations
