@@ -9,6 +9,7 @@ struct FilterBarView: View {
     @Binding var searchText: String
     @Binding var statusFilter: BookStatus?
     @Binding var genreFilter: String?
+    @Binding var includeToRemove: Bool
     let availableGenres: [String]
 
     var body: some View {
@@ -47,6 +48,8 @@ struct FilterBarView: View {
                 }
             }
             .frame(maxWidth: 180)
+
+            Toggle("Include books to remove", isOn: $includeToRemove)
 
             Spacer()
         }
