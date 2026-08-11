@@ -93,6 +93,7 @@ struct CountsBarView: View {
             .foregroundStyle(isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 
     private func count(for status: BookStatus) -> Int {
