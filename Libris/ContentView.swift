@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -17,7 +18,10 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var statusFilter: BookStatus? = nil
     @State private var genreFilter: String? = nil
-    @State private var showingBatchImport = false
+    @State private var showingImportBooks = false
+
+    // Drives the post-import result alert (success summary or failure).
+    @State private var importAlert: ImportAlert? = nil
 
     // Drives the editing sheet: which existing book is being edited (nil = none).
     @State private var editingBook: Book? = nil
@@ -63,16 +67,11 @@ struct ContentView: View {
                     .help("Add a single empty book")
 
                     Button {
-                        showingBatchImport = true
+                        showingImportBooks = true
                     } label: {
-                        Label("Import Batch", systemImage: "square.and.arrow.down.on.square")
+                        Label("Import Books", systemImage: "square.and.arrow.down.on.square")
                     }
-                    .help("Add a batch of books from pasted text")
-                }
-            }
-            .sheet(isPresented: $showingBatchImport) {
-                BatchImportView(existingBooks: books) { newBooks in
-                    importBooks(newBooks)
+                    .help("Add books")
                 }
             }
             .sheet(item: $editingBook) { book in
@@ -94,6 +93,13 @@ struct ContentView: View {
                     }
                 )
             }
+            .fileImporter(
+                isPresented: $showingImportBooks,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleImport(result)
+            }
             .alert(deleteAlertTitle, isPresented: showingDeleteConfirmation, presenting: bookToDelete) { book in
                 Button("Delete", role: .destructive) {
                     deleteBook(book)
@@ -101,6 +107,11 @@ struct ContentView: View {
                 Button("Cancel", role: .cancel) { }
             } message: { _ in
                 Text("This can’t be undone.")
+            }
+            .alert(importAlert?.title ?? "", isPresented: showingImportAlert, presenting: importAlert) { _ in
+                Button("OK", role: .cancel) { }
+            } message: { alert in
+                Text(alert.message)
             }
             .onChange(of: availableGenres) { _, genres in
                 if let genreFilter, !genres.contains(genreFilter) {
@@ -128,6 +139,15 @@ struct ContentView: View {
         Binding(
             get: { bookToDelete != nil },
             set: { if !$0 { bookToDelete = nil } }
+        )
+    }
+
+    /// Bridges the optional `importAlert` to the alert's `isPresented`, clearing
+    /// it when the alert is dismissed.
+    private var showingImportAlert: Binding<Bool> {
+        Binding(
+            get: { importAlert != nil },
+            set: { if !$0 { importAlert = nil } }
         )
     }
 
@@ -165,16 +185,75 @@ struct ContentView: View {
         }
     }
 
-    /// Inserts newly created books. Existing books are never touched, so this
-    /// can't overwrite or corrupt the current library. Duplicate detection
-    /// happens in `BatchImportView` before this is called.
-    private func importBooks(_ newBooks: [Book]) {
-        withAnimation {
-            for book in newBooks {
-                modelContext.insert(book)
+    // MARK: - Import
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            importBooks(from: url)
+        case .failure(let error):
+            importAlert = .failure(message: error.localizedDescription)
+        }
+    }
+
+    /// Reads the chosen file, adds the non-duplicate books, and reports the
+    /// outcome. Existing books are never touched; duplicates are skipped in
+    /// `ImportParser`.
+    private func importBooks(from url: URL) {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let parsed = try ImportParser.parse(data, existingBooks: books)
+            withAnimation {
+                for book in parsed.toAdd {
+                    modelContext.insert(book)
+                }
+            }
+            importAlert = .summary(added: parsed.toAdd.count, duplicates: parsed.duplicateCount)
+        } catch let error as ImportParser.ImportError {
+            importAlert = .failure(message: error.errorDescription ?? "The file couldn’t be imported.")
+        } catch {
+            importAlert = .failure(message: error.localizedDescription)
+        }
+    }
+
+    private enum ImportAlert: Identifiable {
+        case summary(added: Int, duplicates: Int)
+        case failure(message: String)
+
+        var id: String {
+            switch self {
+            case .summary(let added, let duplicates): return "summary-\(added)-\(duplicates)"
+            case .failure(let message): return "failure-\(message)"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .summary(let added, _): return added == 0 ? "No New Books" : "Books Imported"
+            case .failure: return "Import Failed"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .summary(let added, let duplicates):
+                var parts = [added == 1 ? "Added 1 book." : "Added \(added) books."]
+                if duplicates > 0 {
+                    parts.append(duplicates == 1
+                        ? "Skipped 1 duplicate."
+                        : "Skipped \(duplicates) duplicates.")
+                }
+                return parts.joined(separator: " ")
+            case .failure(let message):
+                return message
             }
         }
     }
+
 }
 
 #Preview {

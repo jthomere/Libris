@@ -14,6 +14,7 @@ final class Book {
     // CloudKit sync (CloudKit requires attributes to be optional or defaulted).
     var title: String = ""
     var author: String = ""
+    var isbn: String = ""
     var bookDescription: String = ""
     var genre: String = ""
     var rating: Double = 0
@@ -38,6 +39,7 @@ final class Book {
     init(
         title: String = "",
         author: String = "",
+        isbn: String = "",
         bookDescription: String = "",
         genre: String = "",
         rating: Double = 0,
@@ -51,6 +53,7 @@ final class Book {
     ) {
         self.title = title
         self.author = author
+        self.isbn = isbn
         self.bookDescription = bookDescription
         self.genre = genre
         self.rating = rating
