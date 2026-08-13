@@ -52,7 +52,7 @@ struct BookEditorView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     labeled("Title") {
-                        TextField("Title", text: $title, prompt: Text("Book title"))
+                        TextField("Title", text: $title, prompt: Text("Required"))
                             .labelsHidden()
                             .textFieldStyle(.roundedBorder)
                     }
@@ -123,10 +123,15 @@ struct BookEditorView: View {
                         apply()
                         onSave()
                     }
+                    .disabled(!hasTitle)
                 }
             }
         }
         .frame(minWidth: 460, minHeight: 580)
+    }
+
+    private var hasTitle: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// Writes the draft back to the book. Called only on Done.
