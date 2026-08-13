@@ -2,23 +2,24 @@
 //  ImportParser.swift
 //  Libris
 //
-//  Turns the raw bytes of an import file into books to add, skipping any book
+//  Turns the raw bytes of a library file into books to add, skipping any book
 //  that already exists in the library or earlier in the file. A book is a
-//  duplicate if its ISBN (when present) or its title+author matches. The file
-//  is always treated as a batch to add: existing books are never touched.
-//  Kept separate from the UI so it can be tested directly.
+//  duplicate if its ISBN (when present) or its title+author matches. Existing
+//  books are never touched. Kept separate from the UI so it can be tested.
 //
 
 import Foundation
 
 enum ImportParser {
-    /// The one schema version this build understands. A file declaring any
-    /// other version is rejected rather than parsed under the wrong rules.
     static let supportedVersion = 1
 
     struct Result {
         var toAdd: [Book]
         var duplicateCount: Int
+        var isBackup: Bool
+
+        /// Books the file held before duplicates were skipped.
+        var fileBookCount: Int { toAdd.count + duplicateCount }
     }
 
     enum ImportError: LocalizedError {
@@ -28,17 +29,16 @@ enum ImportParser {
         var errorDescription: String? {
             switch self {
             case .invalidFile:
-                return "This file isn’t a valid Libris import file."
+                return "This file isn’t a valid Libris library file."
             case .unsupportedVersion(let version):
-                return "This file uses import format version \(version), which this version of Libris doesn’t support. Update Libris and try again."
+                return "This file uses format version \(version), which this version of Libris doesn’t support. Update Libris and try again."
             }
         }
     }
 
-    /// Parses `data`, throwing `ImportError` if it isn't a readable import file
-    /// or declares an unsupported version.
     static func parse(_ data: Data, existingBooks: [Book]) throws -> Result {
         let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
 
         // Check the version before decoding the books, so a newer file reports
         // an unsupported version rather than a confusing parse failure.
@@ -49,7 +49,7 @@ enum ImportParser {
             throw ImportError.unsupportedVersion(probe.schemaVersion)
         }
 
-        guard let file = try? decoder.decode(ImportFile.self, from: data) else {
+        guard let file = try? decoder.decode(LibraryFile.self, from: data) else {
             throw ImportError.invalidFile
         }
 
@@ -90,16 +90,20 @@ enum ImportParser {
                     note: trimmed(incoming.note),
                     tags: (incoming.tags ?? [])
                         .map { $0.trimmingCharacters(in: .whitespaces) }
-                        .filter { !$0.isEmpty }
+                        .filter { !$0.isEmpty },
+                    status: status(from: incoming.status),
+                    dateAdded: incoming.dateAdded ?? Date()
                 )
             )
         }
 
-        return Result(toAdd: toAdd, duplicateCount: duplicates)
+        return Result(
+            toAdd: toAdd,
+            duplicateCount: duplicates,
+            isBackup: file.kind == LibraryFile.backupKind
+        )
     }
 
-    /// Minimal shape used to read the version before committing to the full
-    /// decode.
     private struct VersionProbe: Decodable {
         var schemaVersion: Int
     }
@@ -108,9 +112,13 @@ enum ImportParser {
         (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Reduces an ISBN to just its significant characters so formatting
-    /// differences (hyphens, spaces, lowercase check digit) don't defeat
-    /// duplicate detection. Returns "" when there's nothing usable.
+    private static func status(from raw: String?) -> BookStatus {
+        guard let raw else { return .unsorted }
+        return BookStatus(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .unsorted
+    }
+
+    /// Reduces an ISBN to its significant characters so formatting differences
+    /// don't defeat duplicate detection. Returns "" when there's nothing usable.
     private static func normalizedISBN(_ value: String) -> String {
         value.uppercased().filter { $0.isNumber || $0 == "X" }
     }

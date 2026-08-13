@@ -69,6 +69,70 @@ struct ImportParserTests {
         #expect(book.goodreadsURL == "")
     }
 
+    @Test func parsesStatusAndDateAdded() throws {
+        let result = try ImportParser.parse(data("""
+        {
+          "schemaVersion": 1,
+          "books": [
+            { "title": "Finished", "status": "read", "dateAdded": "2021-03-04T05:06:07Z" }
+          ]
+        }
+        """), existingBooks: [])
+
+        let book = try #require(result.toAdd.first)
+        #expect(book.status == .read)
+        #expect(book.dateAdded == ISO8601DateFormatter().date(from: "2021-03-04T05:06:07Z"))
+    }
+
+    @Test func unknownOrMissingStatusFallsBackToUnsorted() throws {
+        let result = try ImportParser.parse(data("""
+        {
+          "schemaVersion": 1,
+          "books": [
+            { "title": "Garbage", "status": "banana" },
+            { "title": "None" }
+          ]
+        }
+        """), existingBooks: [])
+
+        #expect(result.toAdd[0].status == .unsorted)
+        #expect(result.toAdd[1].status == .unsorted)
+    }
+
+    @Test func detectsBackupMarker() throws {
+        let result = try ImportParser.parse(data("""
+        { "schemaVersion": 1, "kind": "backup", "books": [ { "title": "A" }, { "title": "B" } ] }
+        """), existingBooks: [])
+
+        #expect(result.isBackup)
+        #expect(result.fileBookCount == 2)
+    }
+
+    @Test func regularImportIsNotABackup() throws {
+        let result = try ImportParser.parse(data("""
+        { "schemaVersion": 1, "books": [ { "title": "A" } ] }
+        """), existingBooks: [])
+
+        #expect(result.isBackup == false)
+    }
+
+    @Test func fileBookCountIncludesDuplicates() throws {
+        let existing = [Book(title: "Dune", author: "Frank Herbert")]
+        let result = try ImportParser.parse(data("""
+        {
+          "schemaVersion": 1,
+          "books": [
+            { "title": "Dune", "author": "Frank Herbert" },
+            { "title": "New" }
+          ]
+        }
+        """), existingBooks: existing)
+
+        #expect(result.toAdd.count == 1)
+        #expect(result.duplicateCount == 1)
+        #expect(result.fileBookCount == 2)
+    }
+
     @Test func ratingIsClampedToZeroThroughFive() throws {
         let result = try ImportParser.parse(data("""
         {

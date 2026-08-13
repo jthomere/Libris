@@ -1,15 +1,14 @@
 //
-//  ImportedBook.swift
+//  BookRecord.swift
 //  Libris
 //
 
 import Foundation
 
-/// One book as it appears in an import file. JSON keys match these property
-/// names exactly, so no `CodingKeys` mapping is needed. Only `title` is
-/// required; every other field is optional and defaulted when building a
-/// `Book`.
-struct ImportedBook: Decodable {
+/// One book as stored in a Libris library file. Only `title` is required; the
+/// rest default when building a `Book`. `status` and `dateAdded` make the file
+/// a full backup rather than just a list of titles.
+struct BookRecord: Codable {
     var title: String
     var author: String?
     var isbn: String?
@@ -21,4 +20,6 @@ struct ImportedBook: Decodable {
     var goodreadsURL: String?
     var amazonURL: String?
     var coverImageURL: String?
+    var status: String?
+    var dateAdded: Date?
 }
