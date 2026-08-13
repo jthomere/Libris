@@ -255,4 +255,24 @@ struct ImportParserTests {
         #expect(result.toAdd.map(\.title) == ["Legacy"])
         #expect(result.isBackup == false)
     }
+
+    @Test func backupPreservesBlankTitleBooks() throws {
+        let result = try ImportParser.parse(data("""
+        {
+          "schemaVersion": 2,
+          "kind": "backup",
+          "books": [
+            { "title": "", "author": "Ghost", "status": "read" },
+            { "title": "   ", "author": "" },
+            { "title": "Real", "author": "Someone" }
+          ]
+        }
+        """), existingBooks: [])
+
+        #expect(result.isBackup)
+        #expect(result.toAdd.count == 3)
+        #expect(result.fileBookCount == 3)
+        #expect(result.toAdd.filter { $0.title.isEmpty }.count == 2)
+        #expect(result.toAdd.contains { $0.title.isEmpty && $0.author == "Ghost" && $0.status == .read })
+    }
 }

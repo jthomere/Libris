@@ -58,6 +58,8 @@ enum ImportParser {
             throw ImportError.invalidFile
         }
 
+        let isBackup = file.kind == LibraryFile.backupKind
+
         var seenISBNs = Set(existingBooks.map { normalizedISBN($0.isbn) }.filter { !$0.isEmpty })
         var seenTitleAuthors = Set(existingBooks.map { titleAuthorKey(title: $0.title, author: $0.author) })
         var toAdd: [Book] = []
@@ -65,21 +67,25 @@ enum ImportParser {
 
         for incoming in file.books {
             let title = incoming.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !title.isEmpty else { continue }
+            // A backup restores its books verbatim, including any saved with a
+            // blank title; a plain add-list rejects those as junk. Blank titles
+            // can't be told apart by title+author, so they skip that dedup and
+            // only an ISBN match can flag them.
+            if title.isEmpty && !isBackup { continue }
             let author = trimmed(incoming.author)
 
             let isbnRaw = trimmed(incoming.isbn)
             let isbnKey = normalizedISBN(isbnRaw)
-            let taKey = titleAuthorKey(title: title, author: author)
+            let taKey = title.isEmpty ? nil : titleAuthorKey(title: title, author: author)
 
             let isDuplicate = (!isbnKey.isEmpty && seenISBNs.contains(isbnKey))
-                || seenTitleAuthors.contains(taKey)
+                || (taKey.map { seenTitleAuthors.contains($0) } ?? false)
             if isDuplicate {
                 duplicates += 1
                 continue
             }
             if !isbnKey.isEmpty { seenISBNs.insert(isbnKey) }
-            seenTitleAuthors.insert(taKey)
+            if let taKey { seenTitleAuthors.insert(taKey) }
 
             toAdd.append(
                 Book(
@@ -102,11 +108,7 @@ enum ImportParser {
             )
         }
 
-        return Result(
-            toAdd: toAdd,
-            duplicateCount: duplicates,
-            isBackup: file.kind == LibraryFile.backupKind
-        )
+        return Result(toAdd: toAdd, duplicateCount: duplicates, isBackup: isBackup)
     }
 
     private struct VersionProbe: Decodable {

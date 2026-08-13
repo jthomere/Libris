@@ -55,6 +55,19 @@ struct LibraryExporterTests {
         #expect(bare.dateAdded == Date(timeIntervalSince1970: 1_610_000_000))
     }
 
+    @Test func backupRoundTripsBlankTitleBook() throws {
+        let original = [
+            Book(title: "", author: "Ghost", status: .toRead),
+            Book(title: "Real", author: "A")
+        ]
+
+        let data = try LibraryExporter.export(original)
+        let parsed = try ImportParser.parse(data, existingBooks: [])
+
+        #expect(parsed.toAdd.count == 2)
+        #expect(parsed.toAdd.contains { $0.title.isEmpty && $0.author == "Ghost" && $0.status == .toRead })
+    }
+
     @Test func preservesFractionalSeconds() throws {
         let original = Date(timeIntervalSince1970: 1_600_000_000.25)
         let data = try LibraryExporter.export([Book(title: "Fractional", dateAdded: original)])
