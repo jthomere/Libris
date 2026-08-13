@@ -55,14 +55,23 @@ struct LibraryExporterTests {
         #expect(bare.dateAdded == Date(timeIntervalSince1970: 1_610_000_000))
     }
 
+    @Test func preservesFractionalSeconds() throws {
+        let original = Date(timeIntervalSince1970: 1_600_000_000.25)
+        let data = try LibraryExporter.export([Book(title: "Fractional", dateAdded: original)])
+        let parsed = try ImportParser.parse(data, existingBooks: [])
+
+        let restored = try #require(parsed.toAdd.first)
+        #expect(abs(restored.dateAdded.timeIntervalSince(original)) < 0.001)
+    }
+
     @Test @MainActor func exportedFileIsMarkedAsBackup() throws {
         let data = try LibraryExporter.export([Book(title: "One")])
 
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = LibraryDateCoding.decoding
         let file = try decoder.decode(LibraryFile.self, from: data)
 
-        #expect(file.schemaVersion == ImportParser.supportedVersion)
+        #expect(file.schemaVersion == ImportParser.latestVersion)
         #expect(file.kind == LibraryFile.backupKind)
         #expect(file.books.count == 1)
     }

@@ -242,8 +242,17 @@ struct ImportParserTests {
     @Test func throwsOnUnsupportedVersion() {
         #expect(throws: ImportParser.ImportError.self) {
             try ImportParser.parse(data("""
-            { "schemaVersion": 2, "books": [] }
+            { "schemaVersion": 3, "books": [] }
             """), existingBooks: [])
         }
+    }
+
+    @Test func acceptsLegacyVersionOneFiles() throws {
+        let result = try ImportParser.parse(data("""
+        { "schemaVersion": 1, "books": [ { "title": "Legacy" } ] }
+        """), existingBooks: [])
+
+        #expect(result.toAdd.map(\.title) == ["Legacy"])
+        #expect(result.isBackup == false)
     }
 }

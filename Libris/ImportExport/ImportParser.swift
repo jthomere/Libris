@@ -11,7 +11,12 @@
 import Foundation
 
 enum ImportParser {
-    static let supportedVersion = 1
+    /// The version written into files this build exports.
+    static let latestVersion = 2
+
+    /// Every version this build can read: legacy version-1 import files and
+    /// the version-2 backup shape that also carries kind, status, and dateAdded.
+    static let supportedVersions: Set<Int> = [1, 2]
 
     struct Result {
         var toAdd: [Book]
@@ -38,14 +43,14 @@ enum ImportParser {
 
     static func parse(_ data: Data, existingBooks: [Book]) throws -> Result {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = LibraryDateCoding.decoding
 
         // Check the version before decoding the books, so a newer file reports
         // an unsupported version rather than a confusing parse failure.
         guard let probe = try? decoder.decode(VersionProbe.self, from: data) else {
             throw ImportError.invalidFile
         }
-        guard probe.schemaVersion == supportedVersion else {
+        guard supportedVersions.contains(probe.schemaVersion) else {
             throw ImportError.unsupportedVersion(probe.schemaVersion)
         }
 

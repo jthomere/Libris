@@ -9,7 +9,7 @@
 import Foundation
 
 enum LibraryExporter {
-    static let schemaVersion = ImportParser.supportedVersion
+    static let schemaVersion = ImportParser.latestVersion
 
     /// Encodes `books` into the JSON bytes of a Libris backup file.
     static func export(_ books: [Book]) throws -> Data {
@@ -21,7 +21,7 @@ enum LibraryExporter {
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = LibraryDateCoding.encoding
         return try encoder.encode(file)
     }
 
