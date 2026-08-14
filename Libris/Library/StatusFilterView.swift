@@ -9,8 +9,6 @@ struct StatusFilterView: View {
     let books: [Book]
     @Binding var visibleStatuses: Set<BookStatus>
 
-    // Split the statuses across two rows chosen so the rows come out roughly
-    // the same length. The "All" chip leads the first row.
     private let firstRowStatuses: [BookStatus] = [.unsorted, .toRead, .gaveUp, .read]
     private let secondRowStatuses: [BookStatus] = [.notSure, .didNotFinish, .toRemove]
 

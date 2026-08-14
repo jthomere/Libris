@@ -14,11 +14,12 @@ struct FlowLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let origins = Self.arrange(sizes(of: subviews), spacing: spacing, maxWidth: bounds.width).origins
-        for (subview, origin) in zip(subviews, origins) {
+        let sizes = sizes(of: subviews)
+        let origins = Self.arrange(sizes, spacing: spacing, maxWidth: bounds.width).origins
+        for (index, subview) in subviews.enumerated() {
             subview.place(
-                at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y),
-                proposal: ProposedViewSize(subview.sizeThatFits(.unspecified))
+                at: CGPoint(x: bounds.minX + origins[index].x, y: bounds.minY + origins[index].y),
+                proposal: ProposedViewSize(sizes[index])
             )
         }
     }
