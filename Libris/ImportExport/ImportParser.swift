@@ -42,73 +42,70 @@ enum ImportParser {
     }
 
     static func parse(_ data: Data, existingBooks: [Book]) throws -> Result {
+        let file = try decodeLibraryFile(from: data)
+        let isBackup = file.kind == LibraryFile.backupKind
+
+        var tracker = DuplicateTracker(existingBooks: existingBooks)
+        var toAdd: [Book] = []
+        var duplicateCount = 0
+
+        for incomingRecord in file.records {
+            let title = trimmed(incomingRecord.title)
+            // A backup restores its books verbatim, including any saved with a
+            // blank title; a plain add-list rejects those as junk. Blank titles
+            // can't be told apart by title+author, so they skip that dedup and
+            // only an ISBN match can flag them.
+            if title.isEmpty && !isBackup { continue }
+            let author = trimmed(incomingRecord.author)
+            let isbn = trimmed(incomingRecord.isbn)
+
+            if tracker.isDuplicate(title: title, author: author, isbn: isbn) {
+                duplicateCount += 1
+                continue
+            }
+            tracker.remember(title: title, author: author, isbn: isbn)
+            toAdd.append(makeBook(from: incomingRecord))
+        }
+
+        return Result(toAdd: toAdd, duplicateCount: duplicateCount, isBackup: isBackup)
+    }
+
+    /// Decodes the file after confirming its version, so a newer file reports an
+    /// unsupported version rather than a confusing parse failure.
+    private static func decodeLibraryFile(from data: Data) throws -> LibraryFile {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = LibraryDateCoding.decoding
 
-        // Check the version before decoding the books, so a newer file reports
-        // an unsupported version rather than a confusing parse failure.
         guard let probe = try? decoder.decode(VersionProbe.self, from: data) else {
             throw ImportError.invalidFile
         }
         guard supportedVersions.contains(probe.schemaVersion) else {
             throw ImportError.unsupportedVersion(probe.schemaVersion)
         }
-
         guard let file = try? decoder.decode(LibraryFile.self, from: data) else {
             throw ImportError.invalidFile
         }
+        return file
+    }
 
-        let isBackup = file.kind == LibraryFile.backupKind
-
-        var seenISBNs = Set(existingBooks.map { normalizedISBN($0.isbn) }.filter { !$0.isEmpty })
-        var seenTitleAuthors = Set(existingBooks.map { titleAuthorKey(title: $0.title, author: $0.author) })
-        var toAdd: [Book] = []
-        var duplicates = 0
-
-        for incoming in file.books {
-            let title = incoming.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            // A backup restores its books verbatim, including any saved with a
-            // blank title; a plain add-list rejects those as junk. Blank titles
-            // can't be told apart by title+author, so they skip that dedup and
-            // only an ISBN match can flag them.
-            if title.isEmpty && !isBackup { continue }
-            let author = trimmed(incoming.author)
-
-            let isbnRaw = trimmed(incoming.isbn)
-            let isbnKey = normalizedISBN(isbnRaw)
-            let taKey = title.isEmpty ? nil : titleAuthorKey(title: title, author: author)
-
-            let isDuplicate = (!isbnKey.isEmpty && seenISBNs.contains(isbnKey))
-                || (taKey.map { seenTitleAuthors.contains($0) } ?? false)
-            if isDuplicate {
-                duplicates += 1
-                continue
-            }
-            if !isbnKey.isEmpty { seenISBNs.insert(isbnKey) }
-            if let taKey { seenTitleAuthors.insert(taKey) }
-
-            toAdd.append(
-                Book(
-                    title: title,
-                    author: author,
-                    isbn: isbnRaw,
-                    bookDescription: trimmed(incoming.bookDescription),
-                    genre: trimmed(incoming.genre),
-                    rating: min(max(incoming.rating ?? 0, 0), 5),
-                    goodreadsURL: trimmed(incoming.goodreadsURL),
-                    amazonURL: trimmed(incoming.amazonURL),
-                    coverImageURL: trimmed(incoming.coverImageURL),
-                    note: trimmed(incoming.note),
-                    tags: (incoming.tags ?? [])
-                        .map { $0.trimmingCharacters(in: .whitespaces) }
-                        .filter { !$0.isEmpty },
-                    status: status(from: incoming.status),
-                    dateAdded: incoming.dateAdded ?? Date()
-                )
-            )
-        }
-
-        return Result(toAdd: toAdd, duplicateCount: duplicates, isBackup: isBackup)
+    /// Builds a `Book` from an incoming record, trimming its text and clamping
+    /// its rating to the 0...5 the UI expects.
+    private static func makeBook(from record: BookRecord) -> Book {
+        Book(
+            title: trimmed(record.title),
+            author: trimmed(record.author),
+            isbn: trimmed(record.isbn),
+            bookDescription: trimmed(record.bookDescription),
+            genre: trimmed(record.genre),
+            rating: min(max(record.rating ?? 0, 0), 5),
+            goodreadsURL: trimmed(record.goodreadsURL),
+            amazonURL: trimmed(record.amazonURL),
+            coverImageURL: trimmed(record.coverImageURL),
+            note: trimmed(record.note),
+            tags: normalizedTags(record.tags),
+            status: status(from: record.status),
+            dateAdded: record.dateAdded ?? Date()
+        )
     }
 
     private struct VersionProbe: Decodable {
@@ -124,13 +121,9 @@ enum ImportParser {
         return BookStatus(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .unsorted
     }
 
-    /// Reduces an ISBN to its significant characters so formatting differences
-    /// don't defeat duplicate detection. Returns "" when there's nothing usable.
-    private static func normalizedISBN(_ value: String) -> String {
-        value.uppercased().filter { $0.isNumber || $0 == "X" }
-    }
-
-    private static func titleAuthorKey(title: String, author: String) -> String {
-        "\(title.lowercased())|\(author.lowercased())"
+    private static func normalizedTags(_ tags: [String]?) -> [String] {
+        (tags ?? [])
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }
 }

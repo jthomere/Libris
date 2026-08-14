@@ -15,7 +15,7 @@ enum LibraryExporter {
     static func export(_ books: [Book]) throws -> Data {
         let file = LibraryFile(
             schemaVersion: schemaVersion,
-            books: books.map { record(for: $0) },
+            records: books.map { record(for: $0) },
             kind: LibraryFile.backupKind
         )
 

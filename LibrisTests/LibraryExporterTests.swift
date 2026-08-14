@@ -86,6 +86,6 @@ struct LibraryExporterTests {
 
         #expect(file.schemaVersion == ImportParser.latestVersion)
         #expect(file.kind == LibraryFile.backupKind)
-        #expect(file.books.count == 1)
+        #expect(file.records.count == 1)
     }
 }
