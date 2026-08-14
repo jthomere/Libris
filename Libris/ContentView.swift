@@ -65,8 +65,7 @@ struct ContentView: View {
                     books: filteredBooks,
                     libraryIsEmpty: books.isEmpty,
                     onEdit: { editingBook = $0 },
-                    onDelete: { bookToDelete = $0 },
-                    onLoadSample: loadSampleBooks
+                    onDelete: { bookToDelete = $0 }
                 )
             }
             .navigationTitle("Libris")
@@ -235,16 +234,6 @@ struct ContentView: View {
         withAnimation {
             for book in toRemoveBooks {
                 modelContext.delete(book)
-            }
-        }
-    }
-
-    /// Inserts the built-in sample books. Triggered explicitly from the empty
-    /// state, so it never runs on its own and can't duplicate a synced library.
-    private func loadSampleBooks() {
-        withAnimation {
-            for book in SampleData.makeBooks() {
-                modelContext.insert(book)
             }
         }
     }

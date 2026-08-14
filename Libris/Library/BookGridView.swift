@@ -13,7 +13,6 @@ struct BookGridView: View {
     let libraryIsEmpty: Bool
     let onEdit: (Book) -> Void
     let onDelete: (Book) -> Void
-    let onLoadSample: () -> Void
 
     // Adaptive grid of book cards.
     private let columns = [GridItem(.adaptive(minimum: 440, maximum: 600), spacing: 16)]
@@ -48,12 +47,6 @@ struct BookGridView: View {
             Text(libraryIsEmpty
                  ? "Add a book or import a batch to get started."
                  : "Try adjusting your search or filters.")
-        } actions: {
-            if libraryIsEmpty {
-                Button("Load Sample Books") {
-                    onLoadSample()
-                }
-            }
         }
         .padding(.top, 60)
     }
