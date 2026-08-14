@@ -3,7 +3,7 @@
 //  Libris
 //
 
-import Foundation
+import SwiftUI
 
 /// Where a book sits in the reading workflow.
 ///
@@ -43,6 +43,19 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
         case .gaveUp:       return "xmark.circle"
         case .read:         return "checkmark.circle"
         case .toRemove:     return "trash"
+        }
+    }
+
+    /// Accent color used to represent the status in the UI.
+    var tint: Color {
+        switch self {
+        case .notSure:      return .teal
+        case .toRead:       return .blue
+        case .didNotFinish: return .orange
+        case .gaveUp:       return .brown
+        case .read:         return .green
+        case .toRemove:     return .red
+        case .unsorted:     return .secondary
         }
     }
 

@@ -123,25 +123,13 @@ struct BookCardView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(isActive ? statusTint(status) : .secondary)
+                .tint(isActive ? status.tint : .secondary)
                 .background(
-                    isActive ? statusTint(status).opacity(0.15) : .clear,
+                    isActive ? status.tint.opacity(0.15) : .clear,
                     in: RoundedRectangle(cornerRadius: 6)
                 )
                 .help(isActive ? "Tap again to reset to Unsorted" : "Mark as \(status.label)")
             }
-        }
-    }
-
-    private func statusTint(_ status: BookStatus) -> Color {
-        switch status {
-        case .notSure:      return .teal
-        case .toRead:       return .blue
-        case .didNotFinish: return .orange
-        case .gaveUp:       return .brown
-        case .read:         return .green
-        case .toRemove:     return .red
-        case .unsorted:     return .secondary
         }
     }
 
