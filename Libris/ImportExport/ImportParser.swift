@@ -123,7 +123,7 @@ enum ImportParser {
 
     private static func normalizedTags(_ tags: [String]?) -> [String] {
         (tags ?? [])
-            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map { $0.whitespaceTrimmed }
             .filter { !$0.isEmpty }
     }
 }
