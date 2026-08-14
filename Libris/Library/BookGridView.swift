@@ -21,21 +21,7 @@ struct BookGridView: View {
     var body: some View {
         ScrollView {
             if books.isEmpty {
-                ContentUnavailableView {
-                    Label(libraryIsEmpty ? "No Books Yet" : "No Matches",
-                          systemImage: "books.vertical")
-                } description: {
-                    Text(libraryIsEmpty
-                         ? "Add a book or import a batch to get started."
-                         : "Try adjusting your search or filters.")
-                } actions: {
-                    if libraryIsEmpty {
-                        Button("Load Sample Books") {
-                            onLoadSample()
-                        }
-                    }
-                }
-                .padding(.top, 60)
+                emptyState
             } else {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
                     ForEach(books) { book in
@@ -50,5 +36,25 @@ struct BookGridView: View {
                 .padding(.vertical, 16)
             }
         }
+    }
+
+    /// Shown when there are no books to display, distinguishing an empty
+    /// library from filters that match nothing.
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label(libraryIsEmpty ? "No Books Yet" : "No Matches",
+                  systemImage: "books.vertical")
+        } description: {
+            Text(libraryIsEmpty
+                 ? "Add a book or import a batch to get started."
+                 : "Try adjusting your search or filters.")
+        } actions: {
+            if libraryIsEmpty {
+                Button("Load Sample Books") {
+                    onLoadSample()
+                }
+            }
+        }
+        .padding(.top, 60)
     }
 }
