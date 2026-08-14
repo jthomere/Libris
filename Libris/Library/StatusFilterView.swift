@@ -1,27 +1,29 @@
 //
-//  CountsBarView.swift
+//  StatusFilterView.swift
 //  Libris
 //
 
 import SwiftUI
 
-struct CountsBarView: View {
+struct StatusFilterView: View {
     let books: [Book]
-    @Binding var statusFilter: BookStatus?
-    @Binding var hideToRemove: Bool
+    @Binding var visibleStatuses: Set<BookStatus>
 
     // Split the statuses across two rows chosen so the rows come out roughly
-    // the same length. The "All" chip leads the first row and the toggle ends
-    // the second.
+    // the same length. The "All" chip leads the first row.
     private let firstRowStatuses: [BookStatus] = [.unsorted, .toRead, .gaveUp, .read]
     private let secondRowStatuses: [BookStatus] = [.notSure, .didNotFinish, .toRemove]
 
     var body: some View {
-        // A single row when the window is wide enough; otherwise fall back to
-        // the two balanced rows.
-        ViewThatFits(in: .horizontal) {
-            singleRow
-            twoRows
+        HStack(alignment: .center, spacing: 12) {
+            // A single row when the window is wide enough; otherwise fall back
+            // to the two balanced rows.
+            ViewThatFits(in: .horizontal) {
+                singleRow
+                twoRows
+            }
+            presetMenu
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
@@ -30,70 +32,67 @@ struct CountsBarView: View {
 
     private var singleRow: some View {
         HStack(spacing: 10) {
-            allChip
             ForEach(BookStatus.allCases) { status in
-                statusChip(status)
+                statusToggle(status)
             }
-            hideToRemoveToggle
         }
     }
 
     private var twoRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                allChip
                 ForEach(firstRowStatuses) { status in
-                    statusChip(status)
+                    statusToggle(status)
                 }
             }
             HStack(spacing: 10) {
                 ForEach(secondRowStatuses) { status in
-                    statusChip(status)
+                    statusToggle(status)
                 }
-                hideToRemoveToggle
             }
         }
     }
 
-    private var allChip: some View {
-        countChip(label: "All", count: books.count, image: "books.vertical", status: nil)
-    }
-
-    private var hideToRemoveToggle: some View {
-        Toggle("Hide To Remove", isOn: $hideToRemove)
-            .fixedSize()
-    }
-
-    private func statusChip(_ status: BookStatus) -> some View {
-        countChip(label: status.label, count: count(for: status), image: status.systemImage, status: status)
-    }
-
-    private func countChip(label: String, count: Int, image: String, status: BookStatus?) -> some View {
-        let isActive = statusFilter == status
-        return Button {
-            if let status {
-                statusFilter = (statusFilter == status) ? nil : status
-            } else {
-                statusFilter = nil
+    /// Applies a named preset; its title shows the current one, or "Custom"
+    /// when the selection matches no preset.
+    private var presetMenu: some View {
+        Menu(StatusPreset.matching(visibleStatuses)?.label ?? "Custom") {
+            ForEach(StatusPreset.allCases, id: \.self) { preset in
+                Button(preset.label) { visibleStatuses = preset.statuses }
             }
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: image)
-                Text(label)
-                    .lineLimit(1)
-                    .fixedSize()
-                Text("\(count)")
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-            }
-            .font(.callout)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(isActive ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary), in: Capsule())
-            .foregroundStyle(isActive ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .fixedSize()
+    }
+
+    /// A stateful toggle for whether books with `status` are shown.
+    private func statusToggle(_ status: BookStatus) -> some View {
+        Toggle(isOn: binding(for: status)) {
+            label(status.label, count: count(for: status), systemImage: status.systemImage)
+        }
+        .toggleStyle(StatusToggleStyle(tint: status.tint))
+    }
+
+    private func label(_ text: String, count: Int, systemImage: String) -> some View {
+        Label {
+            Text("\(text) \(Text("\(count)").fontWeight(.semibold).monospacedDigit())")
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .lineLimit(1)
+        .fixedSize()
+    }
+
+    private func binding(for status: BookStatus) -> Binding<Bool> {
+        Binding(
+            get: { visibleStatuses.contains(status) },
+            set: { isShown in
+                if isShown {
+                    visibleStatuses.insert(status)
+                } else {
+                    visibleStatuses.remove(status)
+                }
+            }
+        )
     }
 
     private func count(for status: BookStatus) -> Int {

@@ -16,11 +16,10 @@ struct ContentView: View {
     private var books: [Book]
 
     @State private var searchText = ""
-    @State private var statusFilter: BookStatus? = nil
     @State private var genreFilter: String? = nil
-    // Whether to hide books marked To Remove from the default ("All Statuses")
-    // view. On by default so those books stay out of the way until wanted.
-    @State private var hideToRemove = true
+    // The statuses currently shown. Defaults to every status except To Remove,
+    // so those books stay out of the way until the user opts to see them.
+    @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
 
     // Drives the export save panel and the document handed to it.
@@ -57,10 +56,9 @@ struct ContentView: View {
                     availableGenres: availableGenres
                 )
                 Divider()
-                CountsBarView(
+                StatusFilterView(
                     books: books,
-                    statusFilter: $statusFilter,
-                    hideToRemove: $hideToRemove
+                    visibleStatuses: $visibleStatuses
                 )
                 Divider()
                 BookGridView(
@@ -96,7 +94,7 @@ struct ContentView: View {
                     .help("Save every book to a file, for backup")
                     .disabled(books.isEmpty)
 
-                    if statusFilter == .toRemove {
+                    if visibleStatuses == [.toRemove] {
                         Button(role: .destructive) {
                             confirmingDeleteToRemove = true
                         } label: {
@@ -203,7 +201,7 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        BookFilter.filter(books, searchText: searchText, status: statusFilter, genre: genreFilter, hideToRemove: hideToRemove)
+        BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
     }
 
     private var exportFilename: String {
