@@ -131,21 +131,21 @@ struct BookEditorView: View {
     }
 
     private var hasTitle: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !title.isBlank
     }
 
     /// Writes the draft back to the book. Called only on Done.
     private func apply() {
-        book.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.author = author.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.genre = genre.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.bookDescription = bookDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        book.title = title.whitespaceTrimmed
+        book.author = author.whitespaceTrimmed
+        book.genre = genre.whitespaceTrimmed
+        book.bookDescription = bookDescription.whitespaceTrimmed
+        book.note = note.whitespaceTrimmed
         book.tags = Tags.parse(tagsText)
         book.rating = rating
-        book.goodreadsURL = goodreadsURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.amazonURL = amazonURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        book.coverImageURL = coverImageURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        book.goodreadsURL = goodreadsURL.whitespaceTrimmed
+        book.amazonURL = amazonURL.whitespaceTrimmed
+        book.coverImageURL = coverImageURL.whitespaceTrimmed
     }
 
     // MARK: - Field builders

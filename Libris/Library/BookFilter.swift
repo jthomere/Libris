@@ -7,7 +7,7 @@ import Foundation
 
 enum BookFilter {
     static func filter(_ books: [Book], searchText: String, status: BookStatus?, genre: String?, hideToRemove: Bool) -> [Book] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let query = searchText.whitespaceTrimmed.lowercased()
         return books.filter { book in
             if let status {
                 if book.status != status { return false }

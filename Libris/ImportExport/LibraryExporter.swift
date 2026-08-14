@@ -45,6 +45,6 @@ enum LibraryExporter {
 
     /// `nil` for an empty or whitespace-only string, so the encoder omits the key.
     private static func nonEmpty(_ value: String) -> String? {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
+        value.isBlank ? nil : value
     }
 }

@@ -113,12 +113,12 @@ enum ImportParser {
     }
 
     private static func trimmed(_ value: String?) -> String {
-        (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        (value ?? "").whitespaceTrimmed
     }
 
     private static func status(from raw: String?) -> BookStatus {
         guard let raw else { return .unsorted }
-        return BookStatus(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .unsorted
+        return BookStatus(rawValue: raw.whitespaceTrimmed) ?? .unsorted
     }
 
     private static func normalizedTags(_ tags: [String]?) -> [String] {

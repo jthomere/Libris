@@ -198,7 +198,7 @@ struct ContentView: View {
 
     private var deleteAlertTitle: String {
         guard let book = bookToDelete else { return "Delete this book?" }
-        let title = book.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = book.title.whitespaceTrimmed
         return title.isEmpty ? "Delete this book?" : "Delete “\(title)”?"
     }
 
