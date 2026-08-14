@@ -141,7 +141,7 @@ struct ContentView: View {
             ) { result in
                 handleExport(result)
             }
-            .alert(deleteAlertTitle, isPresented: showingDeleteConfirmation, presenting: bookToDelete) { book in
+            .alert(deleteAlertTitle, isPresented: $bookToDelete.isPresent(), presenting: bookToDelete) { book in
                 Button("Delete", role: .destructive) {
                     deleteBook(book)
                 }
@@ -158,7 +158,7 @@ struct ContentView: View {
                 let count = toRemoveBooks.count
                 Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") marked To Remove. This can’t be undone.")
             }
-            .alert("Import this backup?", isPresented: showingBackupConfirmation, presenting: pendingBackup) { parsed in
+            .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
                 Button("Import") {
                     applyImport(parsed)
                 }
@@ -166,12 +166,12 @@ struct ContentView: View {
             } message: { parsed in
                 Text(backupConfirmationMessage(for: parsed))
             }
-            .alert(importAlert?.title ?? "", isPresented: showingImportAlert, presenting: importAlert) { _ in
+            .alert(importAlert?.title ?? "", isPresented: $importAlert.isPresent(), presenting: importAlert) { _ in
                 Button("OK", role: .cancel) { }
             } message: { alert in
                 Text(alert.message)
             }
-            .alert("Export Failed", isPresented: showingExportError, presenting: exportError) { _ in
+            .alert("Export Failed", isPresented: $exportError.isPresent(), presenting: exportError) { _ in
                 Button("OK", role: .cancel) { }
             } message: { message in
                 Text(message)
@@ -194,42 +194,6 @@ struct ContentView: View {
 
     private var toRemoveBooks: [Book] {
         books.filter { $0.status == .toRemove }
-    }
-
-    /// Bridges the optional `bookToDelete` to the alert's `isPresented`, clearing
-    /// the pending book when the alert is dismissed.
-    private var showingDeleteConfirmation: Binding<Bool> {
-        Binding(
-            get: { bookToDelete != nil },
-            set: { if !$0 { bookToDelete = nil } }
-        )
-    }
-
-    /// Bridges the optional `importAlert` to the alert's `isPresented`, clearing
-    /// it when the alert is dismissed.
-    private var showingImportAlert: Binding<Bool> {
-        Binding(
-            get: { importAlert != nil },
-            set: { if !$0 { importAlert = nil } }
-        )
-    }
-
-    /// Bridges the optional `pendingBackup` to the confirmation's `isPresented`,
-    /// discarding the pending books when the confirmation is dismissed.
-    private var showingBackupConfirmation: Binding<Bool> {
-        Binding(
-            get: { pendingBackup != nil },
-            set: { if !$0 { pendingBackup = nil } }
-        )
-    }
-
-    /// Bridges the optional `exportError` to the alert's `isPresented`, clearing
-    /// it when the alert is dismissed.
-    private var showingExportError: Binding<Bool> {
-        Binding(
-            get: { exportError != nil },
-            set: { if !$0 { exportError = nil } }
-        )
     }
 
     private var deleteAlertTitle: String {
@@ -349,41 +313,6 @@ struct ContentView: View {
             exportError = error.localizedDescription
         }
     }
-
-    private enum ImportAlert: Identifiable {
-        case summary(added: Int, duplicates: Int)
-        case failure(message: String)
-
-        var id: String {
-            switch self {
-            case .summary(let added, let duplicates): return "summary-\(added)-\(duplicates)"
-            case .failure(let message): return "failure-\(message)"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .summary(let added, _): return added == 0 ? "No New Books" : "Books Imported"
-            case .failure: return "Import Failed"
-            }
-        }
-
-        var message: String {
-            switch self {
-            case .summary(let added, let duplicates):
-                var parts = [added == 1 ? "Added 1 book." : "Added \(added) books."]
-                if duplicates > 0 {
-                    parts.append(duplicates == 1
-                        ? "Skipped 1 duplicate."
-                        : "Skipped \(duplicates) duplicates.")
-                }
-                return parts.joined(separator: " ")
-            case .failure(let message):
-                return message
-            }
-        }
-    }
-
 }
 
 #Preview {
