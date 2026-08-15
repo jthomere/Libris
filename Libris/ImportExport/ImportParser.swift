@@ -14,8 +14,6 @@ enum ImportParser {
     /// The version written into files this build exports.
     static let latestVersion = 2
 
-    /// Every version this build can read: legacy version-1 import files and
-    /// the version-2 backup shape that also carries kind, status, and dateAdded.
     static let supportedVersions: Set<Int> = [1, 2]
 
     struct Result {
@@ -51,11 +49,6 @@ enum ImportParser {
 
         for incomingRecord in file.records {
             let title = trimmed(incomingRecord.title)
-            // A backup restores its books verbatim, including any saved with a
-            // blank title; a plain add-list rejects those as junk. Blank titles
-            // can't be told apart by title+author, so they skip that dedup and
-            // only an ISBN match can flag them.
-            if title.isEmpty && !isBackup { continue }
             let author = trimmed(incomingRecord.author)
             let isbn = trimmed(incomingRecord.isbn)
 
@@ -70,8 +63,6 @@ enum ImportParser {
         return Result(toAdd: toAdd, duplicateCount: duplicateCount, isBackup: isBackup)
     }
 
-    /// Decodes the file after confirming its version, so a newer file reports an
-    /// unsupported version rather than a confusing parse failure.
     private static func decodeLibraryFile(from data: Data) throws -> LibraryFile {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = LibraryDateCoding.decoding
@@ -88,8 +79,6 @@ enum ImportParser {
         return file
     }
 
-    /// Builds a `Book` from an incoming record, trimming its text and clamping
-    /// its rating to the 0...5 the UI expects.
     private static func makeBook(from record: BookRecord) -> Book {
         Book(
             title: trimmed(record.title),

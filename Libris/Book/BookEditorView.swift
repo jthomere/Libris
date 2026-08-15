@@ -123,15 +123,10 @@ struct BookEditorView: View {
                         apply()
                         onSave()
                     }
-                    .disabled(!hasTitle)
                 }
             }
         }
         .frame(minWidth: 460, minHeight: 580)
-    }
-
-    private var hasTitle: Bool {
-        !title.isBlank
     }
 
     /// Writes the draft back to the book. Called only on Done.
