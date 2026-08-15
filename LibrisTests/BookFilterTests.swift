@@ -9,7 +9,7 @@ import Testing
 struct BookFilterTests {
 
     private let allStatuses = Set(BookStatus.allCases)
-    private let defaultVisible = Set(BookStatus.allCases).subtracting([.toRemove])
+    private let defaultVisible = StatusPreset.default.statuses
 
     private func makeLibrary() -> [Book] {
         [
