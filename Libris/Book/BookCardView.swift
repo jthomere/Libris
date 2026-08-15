@@ -53,6 +53,7 @@ struct BookCardView: View {
                 Text(book.title.isEmpty ? "Untitled" : book.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(book.title.isEmpty ? .secondary : .primary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(book.author.isEmpty ? "Unknown author" : book.author)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -219,4 +220,23 @@ struct BookCardView: View {
             content()
         }
     }
+}
+
+#Preview {
+    let sample = Book(
+        title: "I Heard There Was a Secret Chord: Music as Medicine and the Emerging Science of Sound, Rhythm, and the Human Brain",
+        author: "Daniel J. Levitin, with a foreword by Oliver Sacks",
+        isbn: "978-0-593-65600-0",
+        bookDescription: "A neuroscientist and musician explores music's long history as medicine across cultures and centuries, drawing on the emerging science of how rhythm, melody, and sound can ease chronic pain, slow the progression of Parkinson's disease, sharpen memory in aging brains, and lift the fog of depression and anxiety.",
+        genre: "Popular Science / Neuroscience & Music Therapy",
+        rating: 4.5,
+        goodreadsURL: "https://www.goodreads.com/book/show/195790834",
+        amazonURL: "https://www.amazon.com/dp/0593656008",
+        note: "Recommended by the reading group; start with the chapter on memory, then loop back to the sections on rhythm and movement disorders before the final discussion.",
+        tags: ["Bestseller", "Science", "Music", "Health", "Neuroscience", "Nonfiction", "Reading Group Pick"],
+        status: .toRead
+    )
+    return BookCardView(book: sample, onEdit: {}, onDelete: {})
+        .frame(width: 460)
+        .padding()
 }
