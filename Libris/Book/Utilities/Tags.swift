@@ -9,7 +9,7 @@ enum Tags {
     static func parse(_ string: String) -> [String] {
         string
             .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map { String($0).whitespaceTrimmed }
             .filter { !$0.isEmpty }
     }
 

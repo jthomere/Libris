@@ -156,14 +156,6 @@ struct ImportParserTests {
         #expect(result.toAdd.first?.tags == ["a", "b"])
     }
 
-    @Test func skipsBooksWithBlankTitle() throws {
-        let result = try ImportParser.parse(data("""
-        { "schemaVersion": 1, "books": [ { "title": "   " }, { "title": "Keep" } ] }
-        """), existingBooks: [])
-
-        #expect(result.toAdd.map(\.title) == ["Keep"])
-    }
-
     @Test func skipsDuplicatesOfExistingBooks() throws {
         let existing = [Book(title: "Dune", author: "Frank Herbert")]
         let result = try ImportParser.parse(data("""
@@ -231,12 +223,13 @@ struct ImportParserTests {
         }
     }
 
-    @Test func throwsWhenTitleMissing() {
-        #expect(throws: ImportParser.ImportError.self) {
-            try ImportParser.parse(data("""
-            { "schemaVersion": 1, "books": [ { "author": "No Title" } ] }
-            """), existingBooks: [])
-        }
+    @Test func missingTitleImportsAsUntitled() throws {
+        let result = try ImportParser.parse(data("""
+        { "schemaVersion": 1, "books": [ { "author": "No Title" } ] }
+        """), existingBooks: [])
+
+        #expect(result.toAdd.map(\.title) == [""])
+        #expect(result.toAdd.first?.author == "No Title")
     }
 
     @Test func throwsOnUnsupportedVersion() {

@@ -10,43 +10,46 @@ struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var rowWidth: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var totalHeight: CGFloat = 0
-        var totalWidth: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if rowWidth + size.width > maxWidth, rowWidth > 0 {
-                totalHeight += rowHeight + spacing
-                totalWidth = max(totalWidth, rowWidth - spacing)
-                rowWidth = 0
-                rowHeight = 0
-            }
-            rowWidth += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-        totalHeight += rowHeight
-        totalWidth = max(totalWidth, rowWidth - spacing)
-        return CGSize(width: min(totalWidth, maxWidth), height: totalHeight)
+        Self.arrange(sizes(of: subviews), spacing: spacing, maxWidth: proposal.width ?? .infinity).size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX
-        var y = bounds.minY
-        var rowHeight: CGFloat = 0
+        let sizes = sizes(of: subviews)
+        let origins = Self.arrange(sizes, spacing: spacing, maxWidth: bounds.width).origins
+        for (index, subview) in subviews.enumerated() {
+            subview.place(
+                at: CGPoint(x: bounds.minX + origins[index].x, y: bounds.minY + origins[index].y),
+                proposal: ProposedViewSize(sizes[index])
+            )
+        }
+    }
 
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX {
-                x = bounds.minX
+    private func sizes(of subviews: Subviews) -> [CGSize] {
+        subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    /// Positions boxes of the given `sizes` into rows that wrap at `maxWidth`,
+    /// returning each box's origin (relative to the top-left) and the overall
+    /// size the rows occupy. Pure geometry, so it can be unit-tested directly.
+    static func arrange(_ sizes: [CGSize], spacing: CGFloat, maxWidth: CGFloat) -> (origins: [CGPoint], size: CGSize) {
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for size in sizes {
+            if x + size.width > maxWidth, x > 0 {
+                x = 0
                 y += rowHeight + spacing
                 rowHeight = 0
             }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            origins.append(CGPoint(x: x, y: y))
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
+            totalWidth = max(totalWidth, x - spacing)
         }
+
+        return (origins, CGSize(width: min(totalWidth, maxWidth), height: y + rowHeight))
     }
 }

@@ -15,7 +15,7 @@ enum LibraryExporter {
     static func export(_ books: [Book]) throws -> Data {
         let file = LibraryFile(
             schemaVersion: schemaVersion,
-            books: books.map { record(for: $0) },
+            records: books.map { record(for: $0) },
             kind: LibraryFile.backupKind
         )
 
@@ -45,6 +45,6 @@ enum LibraryExporter {
 
     /// `nil` for an empty or whitespace-only string, so the encoder omits the key.
     private static func nonEmpty(_ value: String) -> String? {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
+        value.isBlank ? nil : value
     }
 }

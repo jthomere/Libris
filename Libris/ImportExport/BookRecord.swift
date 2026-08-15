@@ -5,11 +5,9 @@
 
 import Foundation
 
-/// One book as stored in a Libris library file. Only `title` is required; the
-/// rest default when building a `Book`. `status` and `dateAdded` make the file
-/// a full backup rather than just a list of titles.
+/// One book as stored in a Libris library file.
 struct BookRecord: Codable {
-    var title: String
+    var title: String?
     var author: String?
     var isbn: String?
     var bookDescription: String?
