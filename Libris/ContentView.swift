@@ -21,6 +21,7 @@ struct ContentView: View {
     // so those books stay out of the way until the user opts to see them.
     @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
+    @State private var showingImportPrompt = false
 
     // Drives the export save panel and the document handed to it.
     @State private var showingExport = false
@@ -72,11 +73,11 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItemGroup {
                     Button {
-                        addBook()
+                        showingImportPrompt = true
                     } label: {
-                        Label("New Book", systemImage: "plus")
+                        Label("AI Prompt", systemImage: "sparkles")
                     }
-                    .help("Add a single empty book")
+                    .help("Copy a prompt for an AI assistant to build an import file")
 
                     Button {
                         showingImportBooks = true
@@ -84,6 +85,13 @@ struct ContentView: View {
                         Label("Import Books", systemImage: "square.and.arrow.down.on.square")
                     }
                     .help("Add books")
+
+                    Button {
+                        addBook()
+                    } label: {
+                        Label("New Book", systemImage: "plus")
+                    }
+                    .help("Add a single empty book")
 
                     Button {
                         prepareExport()
@@ -129,6 +137,9 @@ struct ContentView: View {
                 allowsMultipleSelection: false
             ) { result in
                 handleImport(result)
+            }
+            .sheet(isPresented: $showingImportPrompt) {
+                AIPromptView(genres: availableGenres)
             }
             .fileExporter(
                 isPresented: $showingExport,
