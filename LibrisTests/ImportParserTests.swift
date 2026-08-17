@@ -52,6 +52,15 @@ struct ImportParserTests {
         #expect(book.status == .unsorted)
     }
 
+    @Test func datelessImportedBooksShareOneDateAdded() throws {
+        let result = try ImportParser.parse(data("""
+        { "schemaVersion": 1, "books": [ { "title": "A" }, { "title": "B" } ] }
+        """), existingBooks: [])
+
+        #expect(result.toAdd.count == 2)
+        #expect(result.toAdd[0].dateAdded == result.toAdd[1].dateAdded)
+    }
+
     @Test func optionalFieldsDefaultWhenOmitted() throws {
         let result = try ImportParser.parse(data("""
         { "schemaVersion": 1, "books": [ { "title": "Bare" } ] }

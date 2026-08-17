@@ -45,6 +45,10 @@ struct ContentView: View {
     // The book awaiting delete confirmation (nil = no confirmation showing).
     @State private var bookToDelete: Book? = nil
 
+    // When on, the grid shows only the most recently added books (the last
+    // import batch), so they can be reviewed.
+    @State private var showingRecentlyAdded = false
+
     // Drives the confirmation for permanently deleting every To Remove book.
     @State private var confirmingDeleteToRemove = false
 
@@ -54,7 +58,10 @@ struct ContentView: View {
                 FilterBarView(
                     searchText: $searchText,
                     genreFilter: $genreFilter,
-                    availableGenres: availableGenres
+                    availableGenres: availableGenres,
+                    showingRecentlyAdded: $showingRecentlyAdded,
+                    recentlyAddedCount: lastImportBatch.count,
+                    shownCount: filteredBooks.count
                 )
                 Divider()
                 StatusFilterView(
@@ -209,6 +216,13 @@ struct ContentView: View {
         books.filter { $0.status == .toRemove }
     }
 
+    /// The books added most recently — those sharing the newest `dateAdded`,
+    /// i.e. the last import batch (or a single manually added book).
+    private var lastImportBatch: [Book] {
+        guard let newest = books.map(\.dateAdded).max() else { return [] }
+        return books.filter { $0.dateAdded == newest }
+    }
+
     private var deleteAlertTitle: String {
         guard let book = bookToDelete else { return "Delete this book?" }
         let title = book.title.whitespaceTrimmed
@@ -216,7 +230,11 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
+        var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
+        if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
+            result = result.filter { $0.dateAdded == newest }
+        }
+        return result
     }
 
     private var exportFilename: String {

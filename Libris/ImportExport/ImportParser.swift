@@ -47,6 +47,11 @@ enum ImportParser {
         var toAdd: [Book] = []
         var duplicateCount = 0
 
+        // One timestamp for the whole batch, so books added by this import share
+        // a `dateAdded` and can be recognized as a single group afterwards.
+        // Records that carry their own date (e.g. from a backup) keep it.
+        let importDate = Date()
+
         for incomingRecord in file.records {
             let title = trimmed(incomingRecord.title)
             let author = trimmed(incomingRecord.author)
@@ -57,7 +62,7 @@ enum ImportParser {
                 continue
             }
             tracker.remember(title: title, author: author, isbn: isbn)
-            toAdd.append(makeBook(from: incomingRecord))
+            toAdd.append(makeBook(from: incomingRecord, importDate: importDate))
         }
 
         return Result(toAdd: toAdd, duplicateCount: duplicateCount, isBackup: isBackup)
@@ -79,7 +84,7 @@ enum ImportParser {
         return file
     }
 
-    private static func makeBook(from record: BookRecord) -> Book {
+    private static func makeBook(from record: BookRecord, importDate: Date) -> Book {
         Book(
             title: trimmed(record.title),
             author: trimmed(record.author),
@@ -93,7 +98,7 @@ enum ImportParser {
             note: trimmed(record.note),
             tags: normalizedTags(record.tags),
             status: status(from: record.status),
-            dateAdded: record.dateAdded ?? Date()
+            dateAdded: record.dateAdded ?? importDate
         )
     }
 
