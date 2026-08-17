@@ -11,13 +11,17 @@
 import Foundation
 
 enum AIPrompt {
-    static func text(genres: [String]) -> String {
+    static func text(genres: [String], tags: [String]) -> String {
         let version = ImportParser.latestVersion
 
         var sections: [String] = []
 
+        let tagsReuse = tags.isEmpty
+            ? ""
+            : " FYI, here are the tags I have used so far: \(tags.joined(separator: ", "))."
+
         sections.append("""
-        I'm going to give you one or more photos of books — for example a display or shelf in a bookstore. From the photos, produce a single JSON file I can import into my library app, Libris. Reply with only the JSON, nothing else.
+        I'm going to give you one or more photos of books. From the photos, produce a single JSON file.
         """)
 
         sections.append("""
@@ -37,12 +41,12 @@ enum AIPrompt {
 
         - "title" (string): the book's title.
         - "author" (string): author name(s).
-        - "isbn" (string): the ISBN, 10 or 13 digits. Hyphens and spaces are fine. Send it as a string so a leading zero or trailing "X" is preserved.
+        - "isbn" (string): the ISBN, 10 or 13 digits. Send it as a string.
         - "bookDescription" (string): a short synopsis.
         - "genre" (string): a single genre label.
         - "rating" (number): 0 to 5, the rating from the source (e.g. the Goodreads score). Send a plain number or omit it — never "N/A", "3.8*", or any other string.
-        - "note" (string): a short note about the book.
-        - "tags" (array of strings): any labels you want, e.g. ["Bestseller"].
+        - "note" (string): a short note about the book, when they were present on the book (e.g. staff notes from bookstore).
+        - "tags" (array of strings): any labels you might see in the photos or some salient features of the book. \(tagsReuse)
         - "goodreadsURL" (string): full URL to the Goodreads page.
         - "amazonURL" (string): full URL to the Amazon page.
         - "coverImageURL" (string): full URL to a cover image.
@@ -50,7 +54,7 @@ enum AIPrompt {
 
         if !genres.isEmpty {
             sections.append("""
-            Genres already in my library — reuse one of these when it fits, so labels stay consistent instead of splitting (for example "Science Fiction" vs "SF"):
+            Genres already in my library — you can reuse one of these when it fits:
 
             \(genres.joined(separator: ", "))
             """)
@@ -58,7 +62,6 @@ enum AIPrompt {
 
         sections.append("""
         Rules:
-        - The file is a batch of books to ADD. Don't include any reading status.
         - Field names are case-sensitive — match them exactly, including the capitals in "bookDescription", "goodreadsURL", "amazonURL", and "coverImageURL".
         - Encode the file as UTF-8.
         """)

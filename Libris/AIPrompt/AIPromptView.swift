@@ -8,15 +8,16 @@ import AppKit
 import UniformTypeIdentifiers
 
 struct AIPromptView: View {
-    /// Genres currently in the library, embedded in the prompt so the assistant
-    /// reuses existing labels.
+    /// Genres and tags currently in the library, embedded in the prompt so the
+    /// assistant reuses existing labels.
     let genres: [String]
+    let tags: [String]
 
     @Environment(\.dismiss) private var dismiss
     @State private var didCopy = false
     @State private var showingSave = false
 
-    private var promptText: String { AIPrompt.text(genres: genres) }
+    private var promptText: String { AIPrompt.text(genres: genres, tags: tags) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -73,5 +74,5 @@ struct AIPromptView: View {
 }
 
 #Preview {
-    AIPromptView(genres: ["Fantasy", "Science Fiction", "History"])
+    AIPromptView(genres: ["Fantasy", "Science Fiction", "History"], tags: ["Bestseller", "Staff Pick"])
 }

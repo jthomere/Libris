@@ -139,7 +139,7 @@ struct ContentView: View {
                 handleImport(result)
             }
             .sheet(isPresented: $showingImportPrompt) {
-                AIPromptView(genres: availableGenres)
+                AIPromptView(genres: availableGenres, tags: availableTags)
             }
             .fileExporter(
                 isPresented: $showingExport,
@@ -198,6 +198,11 @@ struct ContentView: View {
     private var availableGenres: [String] {
         let genres = Set(books.map(\.genre).filter { !$0.isEmpty })
         return genres.sorted()
+    }
+
+    private var availableTags: [String] {
+        let tags = Set(books.flatMap(\.tags).filter { !$0.isEmpty })
+        return tags.sorted()
     }
 
     private var toRemoveBooks: [Book] {
