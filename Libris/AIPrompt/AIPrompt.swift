@@ -2,11 +2,6 @@
 //  AIPrompt.swift
 //  Libris
 //
-//  Builds the self-contained prompt the user hands to an AI assistant so it
-//  produces a JSON file Libris can import. The prompt carries the current
-//  import schema version and the genres already in the library, so it always
-//  matches what the app accepts.
-//
 
 import Foundation
 
@@ -45,7 +40,7 @@ enum AIPrompt {
         - "bookDescription" (string): a short synopsis.
         - "genre" (string): a single genre label.
         - "rating" (number): 0 to 5, the rating from the source (e.g. the Goodreads score). Send a plain number or omit it — never "N/A", "3.8*", or any other string.
-        - "note" (string): a short note about the book, when they were present on the book (e.g. staff notes from bookstore).
+        - "note" (string): a short note about the book, when visible in the photo (e.g. staff notes in a bookstore).
         - "tags" (array of strings): any labels you might see in the photos or some salient features of the book. \(tagsReuse)
         - "goodreadsURL" (string): full URL to the Goodreads page.
         - "amazonURL" (string): full URL to the Amazon page.

@@ -6,8 +6,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A minimal plain-text document used to save the AI import prompt through
-/// `.fileExporter`.
 struct PromptDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.plainText] }
 

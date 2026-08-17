@@ -47,9 +47,6 @@ enum ImportParser {
         var toAdd: [Book] = []
         var duplicateCount = 0
 
-        // One timestamp for the whole batch, so books added by this import share
-        // a `dateAdded` and can be recognized as a single group afterwards.
-        // Records that carry their own date (e.g. from a backup) keep it.
         let importDate = Date()
 
         for incomingRecord in file.records {

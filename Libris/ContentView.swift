@@ -45,8 +45,6 @@ struct ContentView: View {
     // The book awaiting delete confirmation (nil = no confirmation showing).
     @State private var bookToDelete: Book? = nil
 
-    // When on, the grid shows only the most recently added books (the last
-    // import batch), so they can be reviewed.
     @State private var showingRecentlyAdded = false
 
     // Drives the confirmation for permanently deleting every To Remove book.
@@ -216,8 +214,6 @@ struct ContentView: View {
         books.filter { $0.status == .toRemove }
     }
 
-    /// The books added most recently — those sharing the newest `dateAdded`,
-    /// i.e. the last import batch (or a single manually added book).
     private var lastImportBatch: [Book] {
         guard let newest = books.map(\.dateAdded).max() else { return [] }
         return books.filter { $0.dateAdded == newest }

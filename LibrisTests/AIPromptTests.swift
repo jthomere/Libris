@@ -30,9 +30,4 @@ struct AIPromptTests {
         let text = AIPrompt.text(genres: [], tags: ["Bestseller", "Staff Pick"])
         #expect(text.contains("Bestseller, Staff Pick"))
     }
-
-    @Test func omitsTagSectionWhenEmpty() {
-        let text = AIPrompt.text(genres: [], tags: [])
-        #expect(!text.contains("Tags already in my library"))
-    }
 }

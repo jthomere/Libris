@@ -8,8 +8,6 @@ import AppKit
 import UniformTypeIdentifiers
 
 struct AIPromptView: View {
-    /// Genres and tags currently in the library, embedded in the prompt so the
-    /// assistant reuses existing labels.
     let genres: [String]
     let tags: [String]
 
