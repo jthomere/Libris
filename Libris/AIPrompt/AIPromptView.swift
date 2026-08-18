@@ -14,6 +14,7 @@ struct AIPromptView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var didCopy = false
     @State private var showingSave = false
+    @State private var saveError: String?
 
     private var promptText: String { AIPrompt.text(genres: genres, tags: tags) }
 
@@ -61,7 +62,17 @@ struct AIPromptView: View {
             document: PromptDocument(text: promptText),
             contentType: .plainText,
             defaultFilename: "AI-JSON-export-prompt"
-        ) { _ in }
+        ) { result in
+            if case .failure(let error) = result {
+                if (error as? CocoaError)?.code == .userCancelled { return }
+                saveError = error.localizedDescription
+            }
+        }
+        .alert("Save Failed", isPresented: $saveError.isPresent(), presenting: saveError) { _ in
+            Button("OK", role: .cancel) { }
+        } message: { message in
+            Text(message)
+        }
     }
 
     private func copyPrompt() {
