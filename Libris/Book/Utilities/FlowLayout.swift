@@ -27,7 +27,7 @@ struct FlowLayout: Layout {
     }
 
     private func resolvedSizes(subviews: Subviews, cache: inout [CGSize]?) -> [CGSize] {
-        if let sizes = cache { return sizes }
+        if let sizes = cache, sizes.count == subviews.count { return sizes }
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         cache = sizes
         return sizes
