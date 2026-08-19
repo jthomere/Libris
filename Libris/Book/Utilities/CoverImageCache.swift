@@ -6,12 +6,14 @@ actor CoverImageCache {
 
     private let cache = NSCache<NSString, NSImage>()
     private var inFlight: [URL: Task<NSImage?, Never>] = [:]
+    private var misses: Set<URL> = []
 
     private init() {
         cache.countLimit = 200
     }
 
     func image(for url: URL) async -> NSImage? {
+        if misses.contains(url) { return nil }
         let key = url.absoluteString as NSString
         if let cached = cache.object(forKey: key) {
             return cached
@@ -33,6 +35,8 @@ actor CoverImageCache {
         inFlight.removeValue(forKey: url)
         if let nsImage {
             cache.setObject(nsImage, forKey: key)
+        } else {
+            misses.insert(url)
         }
         return nsImage
     }
