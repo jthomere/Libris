@@ -58,7 +58,7 @@ struct ContentView: View {
                     genreFilter: $genreFilter,
                     availableGenres: availableGenres,
                     showingRecentlyAdded: $showingRecentlyAdded,
-                    recentlyAddedCount: lastImportBatch.count,
+                    recentlyAddedCount: mostRecentlyAdded.count,
                     shownCount: filteredBooks.count
                 )
                 Divider()
@@ -214,7 +214,7 @@ struct ContentView: View {
         books.filter { $0.status == .toRemove }
     }
 
-    private var lastImportBatch: [Book] {
+    private var mostRecentlyAdded: [Book] {
         guard let newest = books.map(\.dateAdded).max() else { return [] }
         return books.filter { $0.dateAdded == newest }
     }
