@@ -36,7 +36,7 @@ enum AIPrompt {
 
         - "title" (string): the book's title.
         - "author" (string): author name(s).
-        - "isbn" (string): the ISBN, 10 or 13 digits. Send it as a string.
+        - "isbn" (string): the ISBN — ISBN-13, or ISBN-10 (which may end in "X"). Send it as a string.
         - "bookDescription" (string): a short synopsis.
         - "genre" (string): a single genre label.
         - "rating" (number): 0 to 5, the rating from the source (e.g. the Goodreads score). Send a plain number or omit it — never "N/A", "3.8*", or any other string.
