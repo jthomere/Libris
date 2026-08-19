@@ -75,35 +75,10 @@ struct BookCardView: View {
         }
     }
 
+    @ViewBuilder
     private var coverImage: some View {
-        Group {
-            if let url = URLNormalizer.normalized(from: book.coverImageURL) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    case .failure:
-                        coverPlaceholder(systemImage: "exclamationmark.triangle")
-                    case .empty:
-                        ProgressView()
-                    @unknown default:
-                        coverPlaceholder(systemImage: "book.closed")
-                    }
-                }
-            } else {
-                coverPlaceholder(systemImage: "book.closed")
-            }
-        }
-        .frame(width: 60, height: 90)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
-    }
-
-    private func coverPlaceholder(systemImage: String) -> some View {
-        ZStack {
-            Rectangle().fill(.quaternary)
-            Image(systemName: systemImage)
-                .foregroundStyle(.secondary)
+        if let url = URLNormalizer.normalized(from: book.coverImageURL) {
+            CachedCoverImage(url: url)
         }
     }
 
