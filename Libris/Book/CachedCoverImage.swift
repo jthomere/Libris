@@ -19,6 +19,7 @@ struct CachedCoverImage: View {
         }
         .task(id: url) {
             if let loaded = await CoverImageCache.shared.image(for: url) {
+                guard !Task.isCancelled else { return }
                 image = loaded
             }
         }

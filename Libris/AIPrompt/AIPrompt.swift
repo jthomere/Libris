@@ -44,7 +44,7 @@ enum AIPrompt {
         - "tags" (array of strings): any labels you might see in the photos or some salient features of the book. \(tagsReuse)
         - "goodreadsURL" (string): full URL to the Goodreads page.
         - "amazonURL" (string): full URL to the Amazon page.
-        - "coverImageURL" (string): full URL to a cover image. To find one: first query Google Books (https://www.googleapis.com/books/v1/volumes?q=isbn:{ISBN}) and use the URL at volumeInfo.imageLinks.thumbnail or largeThumbnail; if Google Books has no result, fall back to Open Library (https://covers.openlibrary.org/b/isbn/{ISBN}-L.jpg). Omit this field entirely if neither source returns a real cover.
+        - "coverImageURL" (string): full URL to a cover image (e.g. from Google Books or Open Library). Omit if none is available.
         """)
 
         if !genres.isEmpty {
@@ -77,7 +77,7 @@ enum AIPrompt {
               "tags": ["Bestseller"],
               "goodreadsURL": "https://www.goodreads.com/book/show/54493401",
               "amazonURL": "https://www.amazon.com/dp/0593135202",
-              "coverImageURL": "https://books.google.com/books/content?id=…&printsec=frontcover&img=1&zoom=1"
+              "coverImageURL": "https://books.google.com/..."
             }
           ]
         }
