@@ -21,6 +21,7 @@ struct ContentView: View {
     // so those books stay out of the way until the user opts to see them.
     @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
+    @State private var showingImportPrompt = false
 
     // Drives the export save panel and the document handed to it.
     @State private var showingExport = false
@@ -44,6 +45,8 @@ struct ContentView: View {
     // The book awaiting delete confirmation (nil = no confirmation showing).
     @State private var bookToDelete: Book? = nil
 
+    @State private var showingRecentlyAdded = false
+
     // Drives the confirmation for permanently deleting every To Remove book.
     @State private var confirmingDeleteToRemove = false
 
@@ -53,7 +56,10 @@ struct ContentView: View {
                 FilterBarView(
                     searchText: $searchText,
                     genreFilter: $genreFilter,
-                    availableGenres: availableGenres
+                    availableGenres: availableGenres,
+                    showingRecentlyAdded: $showingRecentlyAdded,
+                    recentlyAddedCount: mostRecentlyAdded.count,
+                    shownCount: filteredBooks.count
                 )
                 Divider()
                 StatusFilterView(
@@ -72,11 +78,11 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItemGroup {
                     Button {
-                        addBook()
+                        showingImportPrompt = true
                     } label: {
-                        Label("New Book", systemImage: "plus")
+                        Label("AI Prompt", systemImage: "sparkles")
                     }
-                    .help("Add a single empty book")
+                    .help("Copy a prompt for an AI assistant to build an import file")
 
                     Button {
                         showingImportBooks = true
@@ -84,6 +90,13 @@ struct ContentView: View {
                         Label("Import Books", systemImage: "square.and.arrow.down.on.square")
                     }
                     .help("Add books")
+
+                    Button {
+                        addBook()
+                    } label: {
+                        Label("New Book", systemImage: "plus")
+                    }
+                    .help("Add a single empty book")
 
                     Button {
                         prepareExport()
@@ -129,6 +142,9 @@ struct ContentView: View {
                 allowsMultipleSelection: false
             ) { result in
                 handleImport(result)
+            }
+            .sheet(isPresented: $showingImportPrompt) {
+                AIPromptView(genres: availableGenres, tags: availableTags)
             }
             .fileExporter(
                 isPresented: $showingExport,
@@ -189,8 +205,18 @@ struct ContentView: View {
         return genres.sorted()
     }
 
+    private var availableTags: [String] {
+        let tags = Set(books.flatMap(\.tags).filter { !$0.isEmpty })
+        return tags.sorted()
+    }
+
     private var toRemoveBooks: [Book] {
         books.filter { $0.status == .toRemove }
+    }
+
+    private var mostRecentlyAdded: [Book] {
+        guard let newest = books.map(\.dateAdded).max() else { return [] }
+        return books.filter { $0.dateAdded == newest }
     }
 
     private var deleteAlertTitle: String {
@@ -200,7 +226,11 @@ struct ContentView: View {
     }
 
     private var filteredBooks: [Book] {
-        BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
+        var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
+        if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
+            result = result.filter { $0.dateAdded == newest }
+        }
+        return result
     }
 
     private var exportFilename: String {

@@ -9,6 +9,9 @@ struct FilterBarView: View {
     @Binding var searchText: String
     @Binding var genreFilter: String?
     let availableGenres: [String]
+    @Binding var showingRecentlyAdded: Bool
+    let recentlyAddedCount: Int
+    let shownCount: Int
 
     var body: some View {
         HStack(spacing: 12) {
@@ -39,7 +42,17 @@ struct FilterBarView: View {
             }
             .frame(maxWidth: 180)
 
+            Toggle(isOn: $showingRecentlyAdded) {
+                Label("Recently Added", systemImage: "clock.arrow.circlepath")
+            }
+            .toggleStyle(.button)
+            .disabled(recentlyAddedCount == 0)
+            .help("Show only the most recently added books")
+
             Spacer()
+
+            Text("\(shownCount) shown")
+                .foregroundStyle(.secondary)
         }
         .padding(12)
     }
