@@ -44,7 +44,7 @@ enum AIPrompt {
         - "tags" (array of strings): any labels you might see in the photos or some salient features of the book. \(tagsReuse)
         - "goodreadsURL" (string): full URL to the Goodreads page.
         - "amazonURL" (string): full URL to the Amazon page.
-        - "coverImageURL" (string): full URL to a cover image.
+        - "coverImageURL" (string): full URL to a cover image (e.g. from Google Books or Open Library). Omit if none is available.
         """)
 
         if !genres.isEmpty {
@@ -76,8 +76,7 @@ enum AIPrompt {
               "bookDescription": "A lone astronaut wakes with no memory aboard a ship that…",
               "tags": ["Bestseller"],
               "goodreadsURL": "https://www.goodreads.com/book/show/54493401",
-              "amazonURL": "https://www.amazon.com/dp/0593135202",
-              "coverImageURL": "https://covers.openlibrary.org/b/isbn/0593135202-M.jpg"
+              "amazonURL": "https://www.amazon.com/dp/0593135202"
             }
           ]
         }
