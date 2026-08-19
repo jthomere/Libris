@@ -43,7 +43,7 @@ actor CoverImageCache {
                   let image = validImage(from: data) else {
                 return nil
             }
-            try? data.write(to: fileURL)
+            try? data.write(to: fileURL, options: .atomic)
             return image
         }
         inFlight[url] = task
