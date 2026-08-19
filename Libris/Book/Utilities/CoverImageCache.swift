@@ -12,13 +12,16 @@ actor CoverImageCache {
 
     private init() {
         memoryCache.countLimit = 200
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
         diskCacheDirectory = caches.appending(component: "LibrisCovers", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: diskCacheDirectory, withIntermediateDirectories: true)
     }
 
     func image(for url: URL) async -> NSImage? {
+        guard url.scheme == "http" || url.scheme == "https" else { return nil }
         if misses.contains(url) { return nil }
+        if Task.isCancelled { return nil }
 
         let key = url.absoluteString as NSString
 
@@ -32,6 +35,8 @@ actor CoverImageCache {
             memoryCache.setObject(image, forKey: key)
             return image
         }
+
+        if Task.isCancelled { return nil }
 
         if let existing = inFlight[url] {
             return await existing.value
