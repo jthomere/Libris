@@ -76,8 +76,7 @@ enum AIPrompt {
               "bookDescription": "A lone astronaut wakes with no memory aboard a ship that…",
               "tags": ["Bestseller"],
               "goodreadsURL": "https://www.goodreads.com/book/show/54493401",
-              "amazonURL": "https://www.amazon.com/dp/0593135202",
-              "coverImageURL": "https://books.google.com/..."
+              "amazonURL": "https://www.amazon.com/dp/0593135202"
             }
           ]
         }
