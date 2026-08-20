@@ -9,12 +9,14 @@ import SwiftUI
 struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        Self.arrange(sizes(of: subviews), spacing: spacing, maxWidth: proposal.width ?? .infinity).size
+    func makeCache(subviews: Subviews) -> [CGSize]? { nil }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout [CGSize]?) -> CGSize {
+        Self.arrange(resolvedSizes(subviews: subviews, cache: &cache), spacing: spacing, maxWidth: proposal.width ?? .infinity).size
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let sizes = sizes(of: subviews)
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout [CGSize]?) {
+        let sizes = resolvedSizes(subviews: subviews, cache: &cache)
         let origins = Self.arrange(sizes, spacing: spacing, maxWidth: bounds.width).origins
         for (index, subview) in subviews.enumerated() {
             subview.place(
@@ -24,8 +26,11 @@ struct FlowLayout: Layout {
         }
     }
 
-    private func sizes(of subviews: Subviews) -> [CGSize] {
-        subviews.map { $0.sizeThatFits(.unspecified) }
+    private func resolvedSizes(subviews: Subviews, cache: inout [CGSize]?) -> [CGSize] {
+        if let sizes = cache { return sizes }
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        cache = sizes
+        return sizes
     }
 
     /// Positions boxes of the given `sizes` into rows that wrap at `maxWidth`,
