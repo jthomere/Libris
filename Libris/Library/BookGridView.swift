@@ -57,6 +57,7 @@ struct BookGridView: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Delete all visible books")
                 .help("Move all \(books.count) visible book\(books.count == 1 ? "" : "s") to the Trash")
             }
             .padding(.horizontal, 12)

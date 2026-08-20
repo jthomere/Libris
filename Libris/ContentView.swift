@@ -17,11 +17,6 @@ struct ContentView: View {
     @Query(ContentView.activeBooksDescriptor)
     private var books: [Book]
 
-    // The deleted books, used only for the toolbar's Recently Deleted button
-    // (its count and enabled state). The Trash sheet fetches its own copy.
-    @Query(filter: #Predicate<Book> { $0.deletedDate != nil })
-    private var deletedBooks: [Book]
-
     // Built as a FetchDescriptor rather than inline `@Query(filter:sort:)` to
     // keep the predicate-plus-sort expression within the type-checker's reach.
     private static var activeBooksDescriptor: FetchDescriptor<Book> {
@@ -86,7 +81,7 @@ struct ContentView: View {
                 )
                 Divider()
                 BookGridView(
-                    books: filteredBooks,
+                    books: visibleBooks,
                     libraryIsEmpty: books.isEmpty,
                     onEdit: { editingBook = $0 },
                     onDelete: { deleteBook($0) },
@@ -142,7 +137,7 @@ struct ContentView: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                let count = filteredBooks.count
+                let count = visibleBooks.count
                 Text("This moves \(count) book\(count == 1 ? "" : "s") to the Trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
             }
             .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
@@ -212,7 +207,6 @@ struct ContentView: View {
                 Label("Recently Deleted", systemImage: "trash")
             }
             .help("Show deleted books, to restore or permanently delete them")
-            .disabled(deletedBooks.isEmpty)
         }
     }
 
@@ -233,7 +227,7 @@ struct ContentView: View {
         return books.filter { $0.dateAdded == newest }
     }
 
-    private var filteredBooks: [Book] {
+    private var visibleBooks: [Book] {
         var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
         if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
             result = result.filter { $0.dateAdded == newest }
@@ -271,12 +265,12 @@ struct ContentView: View {
 
     /// Moves every currently-visible book to the Trash.
     private func deleteAllVisible() {
-        let books = filteredBooks
+        let booksToDelete = visibleBooks
         let now = Date()
-        for book in books {
+        for book in booksToDelete {
             book.deletedDate = now
         }
-        toast = ToastMessage("Moved \(books.count) book\(books.count == 1 ? "" : "s") to the Trash")
+        toast = ToastMessage("Moved \(booksToDelete.count) book\(booksToDelete.count == 1 ? "" : "s") to the Trash")
     }
 
     // MARK: - Import
