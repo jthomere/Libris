@@ -58,9 +58,8 @@ struct ContentView: View {
     // store until the user taps Done.
     @State private var newBook: Book? = nil
 
-    // A brief, self-dismissing message shown after a delete (nil = none). Its
-    // id changes on each delete so repeated deletes re-trigger the timer.
-    @State private var deletionToast: DeletionToast? = nil
+    // A brief, self-dismissing message shown after a delete (nil = none).
+    @State private var toast: ToastMessage? = nil
 
     @State private var showingRecentlyAdded = false
 
@@ -94,65 +93,9 @@ struct ContentView: View {
                     onDeleteAllVisible: { confirmingDeleteAllVisible = true }
                 )
             }
-            .overlay(alignment: .bottom) {
-                if let deletionToast {
-                    Text(deletionToast.message)
-                        .font(.title3)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 14)
-                        .background(.white, in: Capsule())
-                        .overlay(Capsule().strokeBorder(.separator))
-                        .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
-                        .padding(.bottom, 28)
-                }
-            }
-            .task(id: deletionToast?.id) {
-                guard deletionToast != nil else { return }
-                try? await Task.sleep(for: .seconds(2))
-                deletionToast = nil
-            }
+            .toast($toast)
             .navigationTitle("Libris")
-            .toolbar {
-                ToolbarItemGroup {
-                    Button {
-                        showingImportPrompt = true
-                    } label: {
-                        Label("AI Prompt", systemImage: "sparkles")
-                    }
-                    .help("Copy a prompt for an AI assistant to build an import file")
-
-                    Button {
-                        showingImportBooks = true
-                    } label: {
-                        Label("Import Books", systemImage: "square.and.arrow.down.on.square")
-                    }
-                    .help("Add books")
-
-                    Button {
-                        addBook()
-                    } label: {
-                        Label("New Book", systemImage: "plus")
-                    }
-                    .help("Add a single empty book")
-
-                    Button {
-                        prepareExport()
-                    } label: {
-                        Label("Export Library", systemImage: "square.and.arrow.up.on.square")
-                    }
-                    .help("Save every book to a file, for backup")
-                    .disabled(books.isEmpty)
-
-                    Button {
-                        showingTrash = true
-                    } label: {
-                        Label("Recently Deleted", systemImage: "trash")
-                    }
-                    .help("Show deleted books, to restore or permanently delete them")
-                    .disabled(deletedBooks.isEmpty)
-                }
-            }
+            .toolbar { toolbar }
             .sheet(item: $editingBook) { book in
                 BookEditorView(
                     book: book,
@@ -229,6 +172,50 @@ struct ContentView: View {
         .frame(minWidth: 640, minHeight: 480)
     }
 
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItemGroup {
+            Button {
+                showingImportPrompt = true
+            } label: {
+                Label("AI Prompt", systemImage: "sparkles")
+            }
+            .help("Copy a prompt for an AI assistant to build an import file")
+
+            Button {
+                showingImportBooks = true
+            } label: {
+                Label("Import Books", systemImage: "square.and.arrow.down.on.square")
+            }
+            .help("Add books")
+
+            Button {
+                addBook()
+            } label: {
+                Label("New Book", systemImage: "plus")
+            }
+            .help("Add a single empty book")
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Export Library", systemImage: "square.and.arrow.up.on.square")
+            }
+            .help("Save every book to a file, for backup")
+            .disabled(books.isEmpty)
+
+            Button {
+                showingTrash = true
+            } label: {
+                Label("Recently Deleted", systemImage: "trash")
+            }
+            .help("Show deleted books, to restore or permanently delete them")
+            .disabled(deletedBooks.isEmpty)
+        }
+    }
+
     // MARK: - Derived data
 
     private var availableGenres: [String] {
@@ -278,9 +265,8 @@ struct ContentView: View {
     /// removed from the Recently Deleted sheet.
     private func deleteBook(_ book: Book) {
         let title = book.title.whitespaceTrimmed
-        let message = title.isEmpty ? "Moved book to the Trash" : "Moved “\(title)” to the Trash"
         book.deletedDate = Date()
-        deletionToast = DeletionToast(message: message)
+        toast = ToastMessage(title.isEmpty ? "Moved book to the Trash" : "Moved “\(title)” to the Trash")
     }
 
     /// Moves every currently-visible book to the Trash.
@@ -290,14 +276,7 @@ struct ContentView: View {
         for book in books {
             book.deletedDate = now
         }
-        deletionToast = DeletionToast(message: "Moved \(books.count) book\(books.count == 1 ? "" : "s") to the Trash")
-    }
-
-    /// A transient post-delete confirmation. The `id` gives `task(id:)` a fresh
-    /// value on every delete, so the auto-dismiss timer restarts each time.
-    private struct DeletionToast: Identifiable {
-        let id = UUID()
-        let message: String
+        toast = ToastMessage("Moved \(books.count) book\(books.count == 1 ? "" : "s") to the Trash")
     }
 
     // MARK: - Import
