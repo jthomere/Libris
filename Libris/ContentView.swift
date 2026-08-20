@@ -33,8 +33,8 @@ struct ContentView: View {
 
     @State private var searchText = ""
     @State private var genreFilter: String? = nil
-    // The statuses currently shown. Defaults to every status except To Remove,
-    // so those books stay out of the way until the user opts to see them.
+    // The statuses currently shown. Defaults to every status except Not
+    // Interested, so those books stay out of the way until the user opts in.
     @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
     @State private var showingImportPrompt = false
@@ -67,8 +67,8 @@ struct ContentView: View {
     // Drives the Recently Deleted (trash) sheet.
     @State private var showingTrash = false
 
-    // Drives the confirmation for permanently deleting every To Remove book.
-    @State private var confirmingDeleteToRemove = false
+    // Drives the confirmation for moving every currently-visible book to the Trash.
+    @State private var confirmingDeleteAllVisible = false
 
     var body: some View {
         NavigationStack {
@@ -78,8 +78,7 @@ struct ContentView: View {
                     genreFilter: $genreFilter,
                     availableGenres: availableGenres,
                     showingRecentlyAdded: $showingRecentlyAdded,
-                    recentlyAddedCount: mostRecentlyAdded.count,
-                    shownCount: filteredBooks.count
+                    recentlyAddedCount: mostRecentlyAdded.count
                 )
                 Divider()
                 StatusFilterView(
@@ -91,13 +90,14 @@ struct ContentView: View {
                     books: filteredBooks,
                     libraryIsEmpty: books.isEmpty,
                     onEdit: { editingBook = $0 },
-                    onDelete: { deleteBook($0) }
+                    onDelete: { deleteBook($0) },
+                    onDeleteAllVisible: { confirmingDeleteAllVisible = true }
                 )
             }
             .overlay(alignment: .bottom) {
                 if let deletionToast {
                     Text(deletionToast.message)
-                        .font(.headline.weight(.bold))
+                        .font(.title3)
                         .foregroundStyle(.red)
                         .padding(.horizontal, 22)
                         .padding(.vertical, 14)
@@ -109,7 +109,7 @@ struct ContentView: View {
             }
             .task(id: deletionToast?.id) {
                 guard deletionToast != nil else { return }
-                try? await Task.sleep(for: .seconds(3))
+                try? await Task.sleep(for: .seconds(2))
                 deletionToast = nil
             }
             .navigationTitle("Libris")
@@ -151,16 +151,6 @@ struct ContentView: View {
                     }
                     .help("Show deleted books, to restore or permanently delete them")
                     .disabled(deletedBooks.isEmpty)
-
-                    if visibleStatuses == [.toRemove] {
-                        Button(role: .destructive) {
-                            confirmingDeleteToRemove = true
-                        } label: {
-                            Label("Delete All…", systemImage: "trash")
-                        }
-                        .help("Permanently delete every book marked To Remove")
-                        .disabled(toRemoveBooks.isEmpty)
-                    }
                 }
             }
             .sheet(item: $editingBook) { book in
@@ -203,14 +193,14 @@ struct ContentView: View {
             ) { result in
                 handleExport(result)
             }
-            .alert("Delete Books to Remove?", isPresented: $confirmingDeleteToRemove) {
+            .alert("Delete All Visible Books?", isPresented: $confirmingDeleteAllVisible) {
                 Button("Delete", role: .destructive) {
-                    deleteAllToRemove()
+                    deleteAllVisible()
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                let count = toRemoveBooks.count
-                Text("This moves \(count) book\(count == 1 ? "" : "s") marked To Remove to the trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
+                let count = filteredBooks.count
+                Text("This moves \(count) book\(count == 1 ? "" : "s") to the Trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
             }
             .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
                 Button("Import") {
@@ -249,10 +239,6 @@ struct ContentView: View {
     private var availableTags: [String] {
         let tags = Set(books.flatMap(\.tags).filter { !$0.isEmpty })
         return tags.sorted()
-    }
-
-    private var toRemoveBooks: [Book] {
-        books.filter { $0.status == .toRemove }
     }
 
     private var mostRecentlyAdded: [Book] {
@@ -297,14 +283,14 @@ struct ContentView: View {
         deletionToast = DeletionToast(message: message)
     }
 
-    /// Moves every book marked To Remove to the Trash.
-    private func deleteAllToRemove() {
-        let count = toRemoveBooks.count
+    /// Moves every currently-visible book to the Trash.
+    private func deleteAllVisible() {
+        let books = filteredBooks
         let now = Date()
-        for book in toRemoveBooks {
+        for book in books {
             book.deletedDate = now
         }
-        deletionToast = DeletionToast(message: "Moved \(count) book\(count == 1 ? "" : "s") to the Trash")
+        deletionToast = DeletionToast(message: "Moved \(books.count) book\(books.count == 1 ? "" : "s") to the Trash")
     }
 
     /// A transient post-delete confirmation. The `id` gives `task(id:)` a fresh

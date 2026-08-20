@@ -185,7 +185,7 @@ struct RecentlyDeletedView: View {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let now = Date()
-    container.mainContext.insert(Book(title: "Old Manual", author: "Anon", status: .toRemove, deletedDate: now))
+    container.mainContext.insert(Book(title: "Old Manual", author: "Anon", status: .notInterested, deletedDate: now))
     container.mainContext.insert(Book(title: "Dune", author: "Frank Herbert", deletedDate: now.addingTimeInterval(-86_400 * 3)))
     return RecentlyDeletedView()
         .modelContainer(container)

@@ -36,12 +36,12 @@ struct BookStatusTests {
 
     @Test func settingStatusWritesRawValue() {
         let book = Book(title: "Dune", author: "Frank Herbert")
-        book.status = .toRemove
-        #expect(book.statusRaw == "toRemove")
+        book.status = .notInterested
+        #expect(book.statusRaw == "notInterested")
     }
 
     @Test func actionableExcludesUnsorted() {
-        #expect(BookStatus.actionable == [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .toRemove])
+        #expect(BookStatus.actionable == [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .notInterested])
         #expect(!BookStatus.actionable.contains(.unsorted))
     }
 }

@@ -11,7 +11,6 @@ struct FilterBarView: View {
     let availableGenres: [String]
     @Binding var showingRecentlyAdded: Bool
     let recentlyAddedCount: Int
-    let shownCount: Int
 
     var body: some View {
         HStack(spacing: 12) {
@@ -50,9 +49,6 @@ struct FilterBarView: View {
             .help("Show only the most recently added books")
 
             Spacer()
-
-            Text("\(shownCount) shown")
-                .foregroundStyle(.secondary)
         }
         .padding(12)
     }
