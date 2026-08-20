@@ -31,10 +31,20 @@ final class Book {
     /// When the book was added, used as a stable secondary sort key.
     var dateAdded: Date = Date()
 
+    /// When the book was moved to the trash, or `nil` if it's still in the
+    /// library. Doubles as the soft-delete flag and the "deleted on" timestamp:
+    /// a trashed book is excluded from the library, filters, counts, export, and
+    /// import dedupe until it's restored (`deletedDate = nil`) or permanently
+    /// removed.
+    var deletedDate: Date? = nil
+
     var status: BookStatus {
         get { BookStatus(rawValue: statusRaw) ?? .unsorted }
         set { statusRaw = newValue.rawValue }
     }
+
+    /// Whether the book is currently in the trash.
+    var isDeleted: Bool { deletedDate != nil }
 
     init(
         title: String = "",
@@ -49,7 +59,8 @@ final class Book {
         note: String = "",
         tags: [String] = [],
         status: BookStatus = .unsorted,
-        dateAdded: Date = Date()
+        dateAdded: Date = Date(),
+        deletedDate: Date? = nil
     ) {
         self.title = title
         self.author = author
@@ -64,6 +75,7 @@ final class Book {
         self.tags = tags
         self.statusRaw = status.rawValue
         self.dateAdded = dateAdded
+        self.deletedDate = deletedDate
     }
 
     /// Sets the status to `newStatus`, or resets to `.unsorted` if `newStatus`

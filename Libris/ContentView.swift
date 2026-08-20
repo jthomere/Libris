@@ -10,10 +10,26 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
-    // Fetch every book and filter in memory. A personal library is small, and
-    // in-memory filtering keeps the CloudKit-backed store simple and robust.
-    @Query(sort: [SortDescriptor(\Book.title), SortDescriptor(\Book.dateAdded)])
+    // Fetch every book still in the library (deleted books are excluded at the
+    // fetch, so every derived view below sees only active books) and filter in
+    // memory. A personal library is small, and in-memory filtering keeps the
+    // CloudKit-backed store simple and robust.
+    @Query(ContentView.activeBooksDescriptor)
     private var books: [Book]
+
+    // The deleted books, used only for the toolbar's Recently Deleted button
+    // (its count and enabled state). The Trash sheet fetches its own copy.
+    @Query(filter: #Predicate<Book> { $0.deletedDate != nil })
+    private var deletedBooks: [Book]
+
+    // Built as a FetchDescriptor rather than inline `@Query(filter:sort:)` to
+    // keep the predicate-plus-sort expression within the type-checker's reach.
+    private static var activeBooksDescriptor: FetchDescriptor<Book> {
+        FetchDescriptor<Book>(
+            predicate: #Predicate { $0.deletedDate == nil },
+            sortBy: [SortDescriptor(\.title), SortDescriptor(\.dateAdded)]
+        )
+    }
 
     @State private var searchText = ""
     @State private var genreFilter: String? = nil
@@ -42,10 +58,14 @@ struct ContentView: View {
     // store until the user taps Done.
     @State private var newBook: Book? = nil
 
-    // The book awaiting delete confirmation (nil = no confirmation showing).
-    @State private var bookToDelete: Book? = nil
+    // A brief, self-dismissing message shown after a delete (nil = none). Its
+    // id changes on each delete so repeated deletes re-trigger the timer.
+    @State private var deletionToast: DeletionToast? = nil
 
     @State private var showingRecentlyAdded = false
+
+    // Drives the Recently Deleted (trash) sheet.
+    @State private var showingTrash = false
 
     // Drives the confirmation for permanently deleting every To Remove book.
     @State private var confirmingDeleteToRemove = false
@@ -71,8 +91,26 @@ struct ContentView: View {
                     books: filteredBooks,
                     libraryIsEmpty: books.isEmpty,
                     onEdit: { editingBook = $0 },
-                    onDelete: { bookToDelete = $0 }
+                    onDelete: { deleteBook($0) }
                 )
+            }
+            .overlay(alignment: .bottom) {
+                if let deletionToast {
+                    Text(deletionToast.message)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 14)
+                        .background(.white, in: Capsule())
+                        .overlay(Capsule().strokeBorder(.separator))
+                        .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
+                        .padding(.bottom, 28)
+                }
+            }
+            .task(id: deletionToast?.id) {
+                guard deletionToast != nil else { return }
+                try? await Task.sleep(for: .seconds(3))
+                deletionToast = nil
             }
             .navigationTitle("Libris")
             .toolbar {
@@ -105,6 +143,14 @@ struct ContentView: View {
                     }
                     .help("Save every book to a file, for backup")
                     .disabled(books.isEmpty)
+
+                    Button {
+                        showingTrash = true
+                    } label: {
+                        Label("Recently Deleted", systemImage: "trash")
+                    }
+                    .help("Show deleted books, to restore or permanently delete them")
+                    .disabled(deletedBooks.isEmpty)
 
                     if visibleStatuses == [.toRemove] {
                         Button(role: .destructive) {
@@ -146,6 +192,9 @@ struct ContentView: View {
             .sheet(isPresented: $showingImportPrompt) {
                 AIPromptView(genres: availableGenres, tags: availableTags)
             }
+            .sheet(isPresented: $showingTrash) {
+                RecentlyDeletedView()
+            }
             .fileExporter(
                 isPresented: $showingExport,
                 document: exportDocument,
@@ -154,14 +203,6 @@ struct ContentView: View {
             ) { result in
                 handleExport(result)
             }
-            .alert(deleteAlertTitle, isPresented: $bookToDelete.isPresent(), presenting: bookToDelete) { book in
-                Button("Delete", role: .destructive) {
-                    deleteBook(book)
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: { _ in
-                Text("This can’t be undone.")
-            }
             .alert("Delete Books to Remove?", isPresented: $confirmingDeleteToRemove) {
                 Button("Delete", role: .destructive) {
                     deleteAllToRemove()
@@ -169,7 +210,7 @@ struct ContentView: View {
                 Button("Cancel", role: .cancel) { }
             } message: {
                 let count = toRemoveBooks.count
-                Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") marked To Remove. This can’t be undone.")
+                Text("This moves \(count) book\(count == 1 ? "" : "s") marked To Remove to the trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
             }
             .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
                 Button("Import") {
@@ -219,12 +260,6 @@ struct ContentView: View {
         return books.filter { $0.dateAdded == newest }
     }
 
-    private var deleteAlertTitle: String {
-        guard let book = bookToDelete else { return "Delete this book?" }
-        let title = book.title.whitespaceTrimmed
-        return title.isEmpty ? "Delete this book?" : "Delete “\(title)”?"
-    }
-
     private var filteredBooks: [Book] {
         var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
         if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
@@ -253,19 +288,30 @@ struct ContentView: View {
         newBook = Book(title: "", author: "")
     }
 
+    /// Moves the book to the Trash, where it can be restored or permanently
+    /// removed from the Recently Deleted sheet.
     private func deleteBook(_ book: Book) {
-        withAnimation {
-            modelContext.delete(book)
-        }
+        let title = book.title.whitespaceTrimmed
+        let message = title.isEmpty ? "Moved book to the Trash" : "Moved “\(title)” to the Trash"
+        book.deletedDate = Date()
+        deletionToast = DeletionToast(message: message)
     }
 
-    /// Permanently deletes every book marked To Remove.
+    /// Moves every book marked To Remove to the Trash.
     private func deleteAllToRemove() {
-        withAnimation {
-            for book in toRemoveBooks {
-                modelContext.delete(book)
-            }
+        let count = toRemoveBooks.count
+        let now = Date()
+        for book in toRemoveBooks {
+            book.deletedDate = now
         }
+        deletionToast = DeletionToast(message: "Moved \(count) book\(count == 1 ? "" : "s") to the Trash")
+    }
+
+    /// A transient post-delete confirmation. The `id` gives `task(id:)` a fresh
+    /// value on every delete, so the auto-dismiss timer restarts each time.
+    private struct DeletionToast: Identifiable {
+        let id = UUID()
+        let message: String
     }
 
     // MARK: - Import
