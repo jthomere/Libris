@@ -10,15 +10,38 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
-    // Fetch every book and filter in memory. A personal library is small, and
-    // in-memory filtering keeps the CloudKit-backed store simple and robust.
-    @Query(sort: [SortDescriptor(\Book.title), SortDescriptor(\Book.dateAdded)])
+    // Fetch every book still in the library (deleted books are excluded at the
+    // fetch, so every derived view below sees only active books) and filter in
+    // memory. A personal library is small, and in-memory filtering keeps the
+    // CloudKit-backed store simple and robust.
+    @Query(ContentView.activeBooksDescriptor)
     private var books: [Book]
+
+    // The trashed books, newest deletions first, handed to the Recently Deleted
+    // sheet (a pure view that doesn't touch the store itself).
+    @Query(ContentView.deletedBooksDescriptor)
+    private var deletedBooks: [Book]
+
+    // Built as FetchDescriptors rather than inline `@Query(filter:sort:)` to
+    // keep the predicate-plus-sort expressions within the type-checker's reach.
+    private static var activeBooksDescriptor: FetchDescriptor<Book> {
+        FetchDescriptor<Book>(
+            predicate: #Predicate { $0.deletedDate == nil },
+            sortBy: [SortDescriptor(\.title), SortDescriptor(\.dateAdded)]
+        )
+    }
+
+    private static var deletedBooksDescriptor: FetchDescriptor<Book> {
+        FetchDescriptor<Book>(
+            predicate: #Predicate { $0.deletedDate != nil },
+            sortBy: [SortDescriptor(\.deletedDate, order: .reverse)]
+        )
+    }
 
     @State private var searchText = ""
     @State private var genreFilter: String? = nil
-    // The statuses currently shown. Defaults to every status except To Remove,
-    // so those books stay out of the way until the user opts to see them.
+    // The statuses currently shown. Defaults to every status except Not
+    // Interested, so those books stay out of the way until the user opts in.
     @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
     @State private var showingImportPrompt = false
@@ -42,13 +65,16 @@ struct ContentView: View {
     // store until the user taps Done.
     @State private var newBook: Book? = nil
 
-    // The book awaiting delete confirmation (nil = no confirmation showing).
-    @State private var bookToDelete: Book? = nil
+    // A brief, self-dismissing message shown after a delete (nil = none).
+    @State private var toast: ToastMessage? = nil
 
     @State private var showingRecentlyAdded = false
 
-    // Drives the confirmation for permanently deleting every To Remove book.
-    @State private var confirmingDeleteToRemove = false
+    // Drives the Recently Deleted (trash) sheet.
+    @State private var showingTrash = false
+
+    // Drives the confirmation for moving every currently-visible book to the Trash.
+    @State private var confirmingDeleteAllVisible = false
 
     var body: some View {
         NavigationStack {
@@ -58,8 +84,7 @@ struct ContentView: View {
                     genreFilter: $genreFilter,
                     availableGenres: availableGenres,
                     showingRecentlyAdded: $showingRecentlyAdded,
-                    recentlyAddedCount: mostRecentlyAdded.count,
-                    shownCount: filteredBooks.count
+                    recentlyAddedCount: mostRecentlyAdded.count
                 )
                 Divider()
                 StatusFilterView(
@@ -68,55 +93,16 @@ struct ContentView: View {
                 )
                 Divider()
                 BookGridView(
-                    books: filteredBooks,
+                    books: visibleBooks,
                     libraryIsEmpty: books.isEmpty,
                     onEdit: { editingBook = $0 },
-                    onDelete: { bookToDelete = $0 }
+                    onDelete: { deleteBook($0) },
+                    onDeleteAllVisible: { confirmingDeleteAllVisible = true }
                 )
             }
+            .toast($toast)
             .navigationTitle("Libris")
-            .toolbar {
-                ToolbarItemGroup {
-                    Button {
-                        showingImportPrompt = true
-                    } label: {
-                        Label("AI Prompt", systemImage: "sparkles")
-                    }
-                    .help("Copy a prompt for an AI assistant to build an import file")
-
-                    Button {
-                        showingImportBooks = true
-                    } label: {
-                        Label("Import Books", systemImage: "square.and.arrow.down.on.square")
-                    }
-                    .help("Add books")
-
-                    Button {
-                        addBook()
-                    } label: {
-                        Label("New Book", systemImage: "plus")
-                    }
-                    .help("Add a single empty book")
-
-                    Button {
-                        prepareExport()
-                    } label: {
-                        Label("Export Library", systemImage: "square.and.arrow.up.on.square")
-                    }
-                    .help("Save every book to a file, for backup")
-                    .disabled(books.isEmpty)
-
-                    if visibleStatuses == [.toRemove] {
-                        Button(role: .destructive) {
-                            confirmingDeleteToRemove = true
-                        } label: {
-                            Label("Delete All…", systemImage: "trash")
-                        }
-                        .help("Permanently delete every book marked To Remove")
-                        .disabled(toRemoveBooks.isEmpty)
-                    }
-                }
-            }
+            .toolbar { toolbar }
             .sheet(item: $editingBook) { book in
                 BookEditorView(
                     book: book,
@@ -146,6 +132,14 @@ struct ContentView: View {
             .sheet(isPresented: $showingImportPrompt) {
                 AIPromptView(genres: availableGenres, tags: availableTags)
             }
+            .sheet(isPresented: $showingTrash) {
+                RecentlyDeletedView(
+                    books: deletedBooks,
+                    onRestore: restore,
+                    onDeletePermanently: purge,
+                    onEmptyTrash: emptyTrash
+                )
+            }
             .fileExporter(
                 isPresented: $showingExport,
                 document: exportDocument,
@@ -154,22 +148,14 @@ struct ContentView: View {
             ) { result in
                 handleExport(result)
             }
-            .alert(deleteAlertTitle, isPresented: $bookToDelete.isPresent(), presenting: bookToDelete) { book in
+            .alert("Delete All Visible Books?", isPresented: $confirmingDeleteAllVisible) {
                 Button("Delete", role: .destructive) {
-                    deleteBook(book)
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: { _ in
-                Text("This can’t be undone.")
-            }
-            .alert("Delete Books to Remove?", isPresented: $confirmingDeleteToRemove) {
-                Button("Delete", role: .destructive) {
-                    deleteAllToRemove()
+                    deleteAllVisible()
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                let count = toRemoveBooks.count
-                Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") marked To Remove. This can’t be undone.")
+                let count = visibleBooks.count
+                Text("This moves \(count) book\(count == 1 ? "" : "s") to the Trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
             }
             .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
                 Button("Import") {
@@ -198,6 +184,49 @@ struct ContentView: View {
         .frame(minWidth: 640, minHeight: 480)
     }
 
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItemGroup {
+            Button {
+                showingImportPrompt = true
+            } label: {
+                Label("AI Prompt", systemImage: "sparkles")
+            }
+            .help("Copy a prompt for an AI assistant to build an import file")
+
+            Button {
+                showingImportBooks = true
+            } label: {
+                Label("Import Books", systemImage: "square.and.arrow.down.on.square")
+            }
+            .help("Add books")
+
+            Button {
+                addBook()
+            } label: {
+                Label("New Book", systemImage: "plus")
+            }
+            .help("Add a single empty book")
+
+            Button {
+                prepareExport()
+            } label: {
+                Label("Export Library", systemImage: "square.and.arrow.up.on.square")
+            }
+            .help("Save every book to a file, for backup")
+            .disabled(books.isEmpty)
+
+            Button {
+                showingTrash = true
+            } label: {
+                Label("Recently Deleted", systemImage: "trash")
+            }
+            .help("Show deleted books, to restore or permanently delete them")
+        }
+    }
+
     // MARK: - Derived data
 
     private var availableGenres: [String] {
@@ -210,22 +239,12 @@ struct ContentView: View {
         return tags.sorted()
     }
 
-    private var toRemoveBooks: [Book] {
-        books.filter { $0.status == .toRemove }
-    }
-
     private var mostRecentlyAdded: [Book] {
         guard let newest = books.map(\.dateAdded).max() else { return [] }
         return books.filter { $0.dateAdded == newest }
     }
 
-    private var deleteAlertTitle: String {
-        guard let book = bookToDelete else { return "Delete this book?" }
-        let title = book.title.whitespaceTrimmed
-        return title.isEmpty ? "Delete this book?" : "Delete “\(title)”?"
-    }
-
-    private var filteredBooks: [Book] {
+    private var visibleBooks: [Book] {
         var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
         if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
             result = result.filter { $0.dateAdded == newest }
@@ -253,16 +272,42 @@ struct ContentView: View {
         newBook = Book(title: "", author: "")
     }
 
+    /// Moves the book to the Trash, where it can be restored or permanently
+    /// removed from the Recently Deleted sheet.
     private func deleteBook(_ book: Book) {
+        let title = book.title.whitespaceTrimmed
+        book.deletedDate = Date()
+        toast = ToastMessage(title.isEmpty ? "Moved book to the Trash" : "Moved “\(title)” to the Trash")
+    }
+
+    /// Moves every currently-visible book to the Trash.
+    private func deleteAllVisible() {
+        let booksToDelete = visibleBooks
+        let now = Date()
+        for book in booksToDelete {
+            book.deletedDate = now
+        }
+        toast = ToastMessage("Moved \(booksToDelete.count) book\(booksToDelete.count == 1 ? "" : "s") to the Trash")
+    }
+
+    /// Moves a trashed book back to the library.
+    private func restore(_ book: Book) {
+        withAnimation {
+            book.deletedDate = nil
+        }
+    }
+
+    /// Permanently removes a trashed book from the store.
+    private func purge(_ book: Book) {
         withAnimation {
             modelContext.delete(book)
         }
     }
 
-    /// Permanently deletes every book marked To Remove.
-    private func deleteAllToRemove() {
+    /// Permanently removes every trashed book from the store.
+    private func emptyTrash() {
         withAnimation {
-            for book in toRemoveBooks {
+            for book in deletedBooks {
                 modelContext.delete(book)
             }
         }
@@ -330,9 +375,4 @@ struct ContentView: View {
             exportError = error.localizedDescription
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Book.self, inMemory: true)
 }

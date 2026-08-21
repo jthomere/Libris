@@ -19,9 +19,9 @@ struct BookFilterTests {
         ]
     }
 
-    private func makeLibraryWithToRemove() -> [Book] {
+    private func makeLibraryWithNotInterested() -> [Book] {
         makeLibrary() + [
-            Book(title: "Old Manual", author: "Anon", genre: "Reference", status: .toRemove)
+            Book(title: "Old Manual", author: "Anon", genre: "Reference", status: .notInterested)
         ]
     }
 
@@ -51,7 +51,7 @@ struct BookFilterTests {
     }
 
     @Test func multipleVisibleStatusesShowAllOfThem() {
-        let result = BookFilter.filter(makeLibraryWithToRemove(), searchText: "", visibleStatuses: [.read, .toRemove], genre: nil)
+        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: [.read, .notInterested], genre: nil)
         #expect(Set(result.map(\.title)) == ["Educated", "Old Manual"])
     }
 
@@ -75,20 +75,20 @@ struct BookFilterTests {
         #expect(result.count == 3)
     }
 
-    @Test func toRemoveHiddenByDefault() {
-        let result = BookFilter.filter(makeLibraryWithToRemove(), searchText: "", visibleStatuses: defaultVisible, genre: nil)
+    @Test func notInterestedHiddenByDefault() {
+        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: defaultVisible, genre: nil)
         #expect(!result.map(\.title).contains("Old Manual"))
         #expect(result.count == 3)
     }
 
-    @Test func includingToRemoveShowsThoseBooks() {
-        let result = BookFilter.filter(makeLibraryWithToRemove(), searchText: "", visibleStatuses: allStatuses, genre: nil)
+    @Test func includingNotInterestedShowsThoseBooks() {
+        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: allStatuses, genre: nil)
         #expect(result.map(\.title).contains("Old Manual"))
         #expect(result.count == 4)
     }
 
-    @Test func onlyToRemoveShowsOnlyThoseBooks() {
-        let result = BookFilter.filter(makeLibraryWithToRemove(), searchText: "", visibleStatuses: [.toRemove], genre: nil)
+    @Test func onlyNotInterestedShowsOnlyThoseBooks() {
+        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: [.notInterested], genre: nil)
         #expect(result.map(\.title) == ["Old Manual"])
     }
 }

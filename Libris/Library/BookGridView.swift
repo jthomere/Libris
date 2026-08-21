@@ -13,6 +13,8 @@ struct BookGridView: View {
     let libraryIsEmpty: Bool
     let onEdit: (Book) -> Void
     let onDelete: (Book) -> Void
+    /// Moves every currently-visible book to the Trash.
+    let onDeleteAllVisible: () -> Void
 
     // Adaptive grid of book cards.
     private let columns = [GridItem(.adaptive(minimum: 440, maximum: 600), spacing: 16)]
@@ -34,6 +36,33 @@ struct BookGridView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 16)
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if !books.isEmpty {
+                bottomBar
+            }
+        }
+    }
+
+    /// A pinned footer showing how many books are visible, with a control to
+    /// move the whole visible set to the Trash at once.
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 12) {
+                Spacer()
+                Text("\(books.count) shown")
+                    .foregroundStyle(.secondary)
+                Button(role: .destructive, action: onDeleteAllVisible) {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Delete all visible books")
+                .help("Move all \(books.count) visible book\(books.count == 1 ? "" : "s") to the Trash")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.bar)
         }
     }
 

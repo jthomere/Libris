@@ -11,21 +11,24 @@ import Foundation
 enum StatusPreset: CaseIterable {
     case all
     case `default`
+    case notInterested
     case none
 
     var label: String {
         switch self {
-        case .all:      return "All"
-        case .default:  return "Default"
-        case .none:     return "None"
+        case .all:              return "All"
+        case .default:          return "Default"
+        case .notInterested:    return "Not Interested"
+        case .none:             return "None"
         }
     }
 
     var statuses: Set<BookStatus> {
         switch self {
-        case .all:      return Set(BookStatus.allCases)
-        case .default:  return Set(BookStatus.allCases).subtracting([.toRemove])
-        case .none:     return []
+        case .all:              return Set(BookStatus.allCases)
+        case .default:          return Set(BookStatus.allCases).subtracting([.notInterested])
+        case .notInterested:    return [.notInterested]
+        case .none:             return []
         }
     }
 

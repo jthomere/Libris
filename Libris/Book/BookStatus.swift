@@ -16,7 +16,7 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
     case didNotFinish
     case gaveUp
     case read
-    case toRemove
+    case notInterested
 
     var id: String { rawValue }
 
@@ -29,7 +29,7 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
         case .didNotFinish: return "Did Not Finish"
         case .gaveUp:       return "Gave Up"
         case .read:         return "Read"
-        case .toRemove:     return "To Remove"
+        case .notInterested: return "Not Interested"
         }
     }
 
@@ -42,7 +42,7 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
         case .didNotFinish: return "book.closed"
         case .gaveUp:       return "xmark.circle"
         case .read:         return "checkmark.circle"
-        case .toRemove:     return "trash"
+        case .notInterested: return "hand.thumbsdown"
         }
     }
 
@@ -54,12 +54,12 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
         case .didNotFinish: return .orange
         case .gaveUp:       return .brown
         case .read:         return .green
-        case .toRemove:     return .red
+        case .notInterested: return .gray
         case .unsorted:     return .secondary
         }
     }
 
     /// The statuses the user can explicitly assign via buttons. `unsorted` is
     /// omitted because it's the reset state rather than an action.
-    static var actionable: [BookStatus] { [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .toRemove] }
+    static var actionable: [BookStatus] { [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .notInterested] }
 }

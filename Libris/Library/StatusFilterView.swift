@@ -10,7 +10,7 @@ struct StatusFilterView: View {
     @Binding var visibleStatuses: Set<BookStatus>
 
     private let firstRowStatuses: [BookStatus] = [.unsorted, .toRead, .gaveUp, .read]
-    private let secondRowStatuses: [BookStatus] = [.notSure, .didNotFinish, .toRemove]
+    private let secondRowStatuses: [BookStatus] = [.notSure, .didNotFinish, .notInterested]
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
