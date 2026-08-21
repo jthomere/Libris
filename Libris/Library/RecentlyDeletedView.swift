@@ -3,30 +3,20 @@
 //  Libris
 //
 //  The trash: books that have been deleted from the library but not yet
-//  permanently removed. Presented as a sheet so its restore/permanent-delete
-//  actions stay separate from the library's status and edit actions.
+//  permanently removed. A pure presentation view — it displays the books it's
+//  given and reports actions back through closures; the owner holds the data.
 //
 
 import SwiftUI
-import SwiftData
 
 struct RecentlyDeletedView: View {
-    @Environment(\.modelContext) private var modelContext
+    /// The trashed books to display, newest deletions first (ordered by caller).
+    let books: [Book]
+    var onRestore: (Book) -> Void
+    var onDeletePermanently: (Book) -> Void
+    var onEmptyTrash: () -> Void
+
     @Environment(\.dismiss) private var dismiss
-
-    // The trash's own live fetch: newest deletions first. Kept separate from
-    // ContentView so the sheet updates itself as books are restored or purged.
-    @Query(RecentlyDeletedView.trashDescriptor)
-    private var deletedBooks: [Book]
-
-    // Built as a FetchDescriptor rather than inline `@Query(filter:sort:)` to
-    // keep the predicate-plus-sort expression within the type-checker's reach.
-    private static var trashDescriptor: FetchDescriptor<Book> {
-        FetchDescriptor<Book>(
-            predicate: #Predicate { $0.deletedDate != nil },
-            sortBy: [SortDescriptor(\.deletedDate, order: .reverse)]
-        )
-    }
 
     // The book awaiting permanent-delete confirmation (nil = none).
     @State private var bookToPurge: Book? = nil
@@ -34,48 +24,69 @@ struct RecentlyDeletedView: View {
     @State private var confirmingEmptyTrash = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if deletedBooks.isEmpty {
-                    emptyState
-                } else {
-                    list
-                }
-            }
-            .navigationTitle("Recently Deleted")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-                ToolbarItem(placement: .destructiveAction) {
-                    Button(role: .destructive) {
-                        confirmingEmptyTrash = true
-                    } label: {
-                        Label("Empty Trash", systemImage: "trash")
-                    }
-                    .help("Permanently delete every book in the trash")
-                    .disabled(deletedBooks.isEmpty)
-                }
-            }
-            .alert(purgeAlertTitle, isPresented: $bookToPurge.isPresent(), presenting: bookToPurge) { book in
-                Button("Delete Permanently", role: .destructive) {
-                    purge(book)
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: { _ in
-                Text("This can’t be undone.")
-            }
-            .alert("Empty Trash?", isPresented: $confirmingEmptyTrash) {
-                Button("Delete Permanently", role: .destructive) {
-                    emptyTrash()
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                let count = deletedBooks.count
-                Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") in the trash. This can’t be undone.")
-            }
+        // A fixed header and bottom bar with only the list between them (à la
+        // Finder's Trash), so restoring the last book empties the pane without
+        // any chrome shifting.
+        VStack(spacing: 0) {
+            header
+            Divider()
+            list
+            Divider()
+            bottomBar
         }
         .frame(minWidth: 480, minHeight: 420)
+        .alert(purgeAlertTitle, isPresented: $bookToPurge.isPresent(), presenting: bookToPurge) { book in
+            Button("Delete Permanently", role: .destructive) {
+                onDeletePermanently(book)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { _ in
+            Text("This can’t be undone.")
+        }
+        .alert("Empty Trash?", isPresented: $confirmingEmptyTrash) {
+            Button("Delete Permanently", role: .destructive) {
+                onEmptyTrash()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            let count = books.count
+            Text("This permanently deletes \(count) book\(count == 1 ? "" : "s") in the trash. This can’t be undone.")
+        }
+    }
+
+    // MARK: - Chrome
+
+    private var header: some View {
+        Text("Recently Deleted")
+            .font(.headline)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+    }
+
+    private var bottomBar: some View {
+        HStack(spacing: 12) {
+            Button(role: .destructive) {
+                confirmingEmptyTrash = true
+            } label: {
+                Label("Empty Trash", systemImage: "trash")
+            }
+            .help("Permanently delete every book in the trash")
+            .disabled(books.isEmpty)
+
+            Spacer()
+
+            Text("\(books.count) book\(books.count == 1 ? "" : "s")")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button("Done") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Content
@@ -83,11 +94,11 @@ struct RecentlyDeletedView: View {
     private var list: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(Array(deletedBooks.enumerated()), id: \.element.id) { index, book in
+                ForEach(Array(books.enumerated()), id: \.element.id) { index, book in
                     row(book)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                    if index < deletedBooks.count - 1 {
+                    if index < books.count - 1 {
                         Divider()
                     }
                 }
@@ -117,11 +128,12 @@ struct RecentlyDeletedView: View {
             Spacer(minLength: 12)
 
             Button {
-                restore(book)
+                onRestore(book)
             } label: {
                 Label("Restore", systemImage: "arrow.uturn.backward")
             }
             .help("Move this book back to the library")
+            .fixedSize()
 
             Button(role: .destructive) {
                 bookToPurge = book
@@ -129,6 +141,7 @@ struct RecentlyDeletedView: View {
                 Label("Delete Permanently", systemImage: "trash")
             }
             .help("Remove this book for good")
+            .fixedSize()
         }
     }
 
@@ -139,54 +152,31 @@ struct RecentlyDeletedView: View {
         }
     }
 
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Trash is Empty", systemImage: "trash")
-        } description: {
-            Text("Books you delete appear here, where you can restore them or remove them for good.")
-        }
-    }
-
     private var purgeAlertTitle: String {
         guard let book = bookToPurge else { return "Delete this book permanently?" }
         let title = book.title.whitespaceTrimmed
         return title.isEmpty ? "Delete this book permanently?" : "Delete “\(title)” permanently?"
     }
-
-    // MARK: - Mutations
-
-    /// Moves the book back to the library.
-    private func restore(_ book: Book) {
-        withAnimation {
-            book.deletedDate = nil
-        }
-    }
-
-    /// Permanently removes the book from the store.
-    private func purge(_ book: Book) {
-        withAnimation {
-            modelContext.delete(book)
-        }
-    }
-
-    /// Permanently removes every book in the trash.
-    private func emptyTrash() {
-        withAnimation {
-            for book in deletedBooks {
-                modelContext.delete(book)
-            }
-        }
-    }
 }
 
-#Preview {
-    let container = try! ModelContainer(
-        for: Book.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
+#Preview("With books") {
     let now = Date()
-    container.mainContext.insert(Book(title: "Old Manual", author: "Anon", status: .notInterested, deletedDate: now))
-    container.mainContext.insert(Book(title: "Dune", author: "Frank Herbert", deletedDate: now.addingTimeInterval(-86_400 * 3)))
-    return RecentlyDeletedView()
-        .modelContainer(container)
+    return RecentlyDeletedView(
+        books: [
+            Book(title: "Old Manual", author: "Anon", status: .notInterested, deletedDate: now),
+            Book(title: "Dune", author: "Frank Herbert", deletedDate: now.addingTimeInterval(-86_400 * 3))
+        ],
+        onRestore: { _ in },
+        onDeletePermanently: { _ in },
+        onEmptyTrash: { }
+    )
+}
+
+#Preview("Empty") {
+    RecentlyDeletedView(
+        books: [],
+        onRestore: { _ in },
+        onDeletePermanently: { _ in },
+        onEmptyTrash: { }
+    )
 }

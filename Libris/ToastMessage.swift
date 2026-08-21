@@ -34,15 +34,21 @@ private struct ToastModifier: ViewModifier {
                 if let message {
                     Text(message.text)
                         .font(.title3)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 22)
                         .padding(.vertical, 14)
-                        .background(.white, in: Capsule())
-                        .overlay(Capsule().strokeBorder(.separator))
+                        .background(.regularMaterial, in: Capsule())
                         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
                         .padding(.bottom, 28)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom),
+                            removal: .opacity
+                        ))
                 }
             }
+            // Keyed to the message identity so it animates both the slide-in
+            // and the fade-out, without the caller wrapping in withAnimation.
+            .animation(.easeInOut, value: message?.id)
             // The id changes with each new message, restarting the timer.
             .task(id: message?.id) {
                 guard message != nil else { return }
