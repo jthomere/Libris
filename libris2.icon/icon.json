@@ -11,8 +11,8 @@
       "blur-material" : 0.5,
       "layers" : [
         {
-          "image-name" : "Untitled.svg",
-          "name" : "Untitled",
+          "image-name" : "book1.svg",
+          "name" : "book1",
           "position" : {
             "scale" : 0.66,
             "translation-in-points" : [
@@ -24,8 +24,8 @@
         {
           "fill" : "none",
           "glass" : true,
-          "image-name" : "Untitled 2.svg",
-          "name" : "Untitled 2",
+          "image-name" : "book2.svg",
+          "name" : "book2",
           "opacity" : 1,
           "position" : {
             "scale" : 0.81,
@@ -36,8 +36,8 @@
           }
         },
         {
-          "image-name" : "Untitled 3.svg",
-          "name" : "Untitled 3",
+          "image-name" : "book3.svg",
+          "name" : "book3",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -47,8 +47,8 @@
           }
         },
         {
-          "image-name" : "Untitled 4.svg",
-          "name" : "Untitled 4",
+          "image-name" : "book4.svg",
+          "name" : "book4",
           "position" : {
             "scale" : 1.08,
             "translation-in-points" : [
