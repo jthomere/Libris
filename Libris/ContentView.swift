@@ -17,12 +17,24 @@ struct ContentView: View {
     @Query(ContentView.activeBooksDescriptor)
     private var books: [Book]
 
-    // Built as a FetchDescriptor rather than inline `@Query(filter:sort:)` to
-    // keep the predicate-plus-sort expression within the type-checker's reach.
+    // The trashed books, newest deletions first, handed to the Recently Deleted
+    // sheet (a pure view that doesn't touch the store itself).
+    @Query(ContentView.deletedBooksDescriptor)
+    private var deletedBooks: [Book]
+
+    // Built as FetchDescriptors rather than inline `@Query(filter:sort:)` to
+    // keep the predicate-plus-sort expressions within the type-checker's reach.
     private static var activeBooksDescriptor: FetchDescriptor<Book> {
         FetchDescriptor<Book>(
             predicate: #Predicate { $0.deletedDate == nil },
             sortBy: [SortDescriptor(\.title), SortDescriptor(\.dateAdded)]
+        )
+    }
+
+    private static var deletedBooksDescriptor: FetchDescriptor<Book> {
+        FetchDescriptor<Book>(
+            predicate: #Predicate { $0.deletedDate != nil },
+            sortBy: [SortDescriptor(\.deletedDate, order: .reverse)]
         )
     }
 
@@ -121,7 +133,12 @@ struct ContentView: View {
                 AIPromptView(genres: availableGenres, tags: availableTags)
             }
             .sheet(isPresented: $showingTrash) {
-                RecentlyDeletedView()
+                RecentlyDeletedView(
+                    books: deletedBooks,
+                    onRestore: restore,
+                    onDeletePermanently: purge,
+                    onEmptyTrash: emptyTrash
+                )
             }
             .fileExporter(
                 isPresented: $showingExport,
@@ -273,6 +290,29 @@ struct ContentView: View {
         toast = ToastMessage("Moved \(booksToDelete.count) book\(booksToDelete.count == 1 ? "" : "s") to the Trash")
     }
 
+    /// Moves a trashed book back to the library.
+    private func restore(_ book: Book) {
+        withAnimation {
+            book.deletedDate = nil
+        }
+    }
+
+    /// Permanently removes a trashed book from the store.
+    private func purge(_ book: Book) {
+        withAnimation {
+            modelContext.delete(book)
+        }
+    }
+
+    /// Permanently removes every trashed book from the store.
+    private func emptyTrash() {
+        withAnimation {
+            for book in deletedBooks {
+                modelContext.delete(book)
+            }
+        }
+    }
+
     // MARK: - Import
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -335,9 +375,4 @@ struct ContentView: View {
             exportError = error.localizedDescription
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Book.self, inMemory: true)
 }
