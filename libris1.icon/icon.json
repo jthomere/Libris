@@ -1,0 +1,53 @@
+{
+  "features" : [
+    "refractivity",
+    "specular-location"
+  ],
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.32345,0.46266,0.79977,1.00000",
+      "srgb:0.19941,0.34380,0.61923,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "hidden" : false,
+          "image-name" : "246994263_e01f2f25-31be-4d73-8ad1-e6583afced0d.svg",
+          "name" : "246994263_e01f2f25-31be-4d73-8ad1-e6583afced0d",
+          "opacity" : 1,
+          "position" : {
+            "scale" : 2.5,
+            "translation-in-points" : [
+              5.94095167798514e-05,
+              -0.8854897803666972
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "refractivity" : {
+        "depth" : 0.0748828125,
+        "enabled" : true,
+        "strength" : 0.523125
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.6
+      },
+      "specular" : "outside",
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.2
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
