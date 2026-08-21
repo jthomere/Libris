@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AEC490C93038DDC5009081AF /* libris1.icon in Resources */ = {isa = PBXBuildFile; fileRef = AEC490C83038DDC5009081AF /* libris1.icon */; };
+		AEC491ED3038F14E009081AF /* libris2.icon in Resources */ = {isa = PBXBuildFile; fileRef = AEC491EC3038F14E009081AF /* libris2.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +30,7 @@
 
 /* Begin PBXFileReference section */
 		AEC490C83038DDC5009081AF /* libris1.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = libris1.icon; sourceTree = "<group>"; };
+		AEC491EC3038F14E009081AF /* libris2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = libris2.icon; sourceTree = "<group>"; };
 		AEE5CD5630269ED3004BEE13 /* Libris.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Libris.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEE5CD6530269ED5004BEE13 /* LibrisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LibrisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEE5CD6F30269ED5004BEE13 /* LibrisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LibrisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -79,6 +81,7 @@
 				AEE5CD7230269ED5004BEE13 /* LibrisUITests */,
 				AEE5CD5730269ED3004BEE13 /* Products */,
 				AEC490C83038DDC5009081AF /* libris1.icon */,
+				AEC491EC3038F14E009081AF /* libris2.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -204,6 +207,7 @@
 			isa = PBXResourcesBuildPhase;
 			files = (
 				AEC490C93038DDC5009081AF /* libris1.icon in Resources */,
+				AEC491ED3038F14E009081AF /* libris2.icon in Resources */,
 			);
 		};
 		AEE5CD6330269ED5004BEE13 /* Resources */ = {
@@ -373,7 +377,7 @@
 		AEE5CD7830269ED5004BEE13 /* Debug configuration for PBXNativeTarget "Libris" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = libris1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = libris2;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Libris/Libris.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -416,7 +420,7 @@
 		AEE5CD7930269ED5004BEE13 /* Release configuration for PBXNativeTarget "Libris" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = libris1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = libris2;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Libris/Libris.entitlements;
 				CODE_SIGN_STYLE = Automatic;
