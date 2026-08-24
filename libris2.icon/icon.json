@@ -1,0 +1,91 @@
+{
+  "features" : [
+    "refractivity",
+    "specular-location"
+  ],
+  "fill" : {
+    "automatic-gradient" : "srgb:0.46416,0.27674,0.52130,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "image-name" : "book1.svg",
+          "name" : "book1",
+          "position" : {
+            "scale" : 0.66,
+            "translation-in-points" : [
+              -13.88753499845879,
+              -72.48816926505799
+            ]
+          }
+        },
+        {
+          "fill" : "none",
+          "glass" : true,
+          "image-name" : "book2.svg",
+          "name" : "book2",
+          "opacity" : 1,
+          "position" : {
+            "scale" : 0.81,
+            "translation-in-points" : [
+              -32.581299772130194,
+              -37.738508401660454
+            ]
+          }
+        },
+        {
+          "image-name" : "book3.svg",
+          "name" : "book3",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -18.051707313626423,
+              -8.604515518784524
+            ]
+          }
+        },
+        {
+          "image-name" : "book4.svg",
+          "name" : "book4",
+          "position" : {
+            "scale" : 1.08,
+            "translation-in-points" : [
+              -18.426707313626423,
+              0.6083571974673987
+            ]
+          }
+        }
+      ],
+      "lighting" : "combined",
+      "position" : {
+        "scale" : 2.96,
+        "translation-in-points" : [
+          53.375,
+          26.5
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0.0502734375,
+        "enabled" : true,
+        "strength" : 0.49421875
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.6
+      },
+      "specular" : "inside",
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.2
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
