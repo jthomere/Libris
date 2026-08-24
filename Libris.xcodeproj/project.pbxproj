@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AEC490C93038DDC5009081AF /* libris1.icon in Resources */ = {isa = PBXBuildFile; fileRef = AEC490C83038DDC5009081AF /* libris1.icon */; };
 		AEC491ED3038F14E009081AF /* libris2.icon in Resources */ = {isa = PBXBuildFile; fileRef = AEC491EC3038F14E009081AF /* libris2.icon */; };
 /* End PBXBuildFile section */
 
@@ -29,7 +28,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AEC490C83038DDC5009081AF /* libris1.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = libris1.icon; sourceTree = "<group>"; };
 		AEC491EC3038F14E009081AF /* libris2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = libris2.icon; sourceTree = "<group>"; };
 		AEE5CD5630269ED3004BEE13 /* Libris.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Libris.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AEE5CD6530269ED5004BEE13 /* LibrisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LibrisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -80,7 +78,6 @@
 				AEE5CD6830269ED5004BEE13 /* LibrisTests */,
 				AEE5CD7230269ED5004BEE13 /* LibrisUITests */,
 				AEE5CD5730269ED3004BEE13 /* Products */,
-				AEC490C83038DDC5009081AF /* libris1.icon */,
 				AEC491EC3038F14E009081AF /* libris2.icon */,
 			);
 			sourceTree = "<group>";
@@ -206,7 +203,6 @@
 		AEE5CD5430269ED3004BEE13 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				AEC490C93038DDC5009081AF /* libris1.icon in Resources */,
 				AEC491ED3038F14E009081AF /* libris2.icon in Resources */,
 			);
 		};
