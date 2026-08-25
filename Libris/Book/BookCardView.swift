@@ -104,7 +104,7 @@ struct BookCardView: View {
                     isActive ? status.tint.opacity(0.15) : .clear,
                     in: RoundedRectangle(cornerRadius: 6)
                 )
-                .help(isActive ? "Tap again to reset to Unsorted" : "Mark as \(status.label)")
+                .help(isActive ? "Tap again to clear the status" : "Mark as \(status.label)")
             }
         }
     }

@@ -7,10 +7,10 @@ import SwiftUI
 
 /// Where a book sits in the reading workflow.
 ///
-/// `unsorted` is the default, "no decision yet" state. It's also the state a
-/// book returns to when you tap its currently-active status again.
+/// A book's status is optional: `nil` means "no decision yet" — the default for
+/// new and imported books, and the state a book returns to when you tap its
+/// currently-active status again.
 enum BookStatus: String, Codable, CaseIterable, Identifiable {
-    case unsorted
     case notSure
     case toRead
     case didNotFinish
@@ -23,7 +23,6 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
     /// Human-readable label shown in the UI.
     var label: String {
         switch self {
-        case .unsorted:     return "Unsorted"
         case .notSure:      return "Not Sure"
         case .toRead:       return "To Read"
         case .didNotFinish: return "Did Not Finish"
@@ -36,7 +35,6 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
     /// SF Symbol used to represent the status.
     var systemImage: String {
         switch self {
-        case .unsorted:     return "tray"
         case .notSure:      return "questionmark.circle"
         case .toRead:       return "bookmark"
         case .didNotFinish: return "book.closed"
@@ -55,11 +53,18 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
         case .gaveUp:       return .brown
         case .read:         return .green
         case .notInterested: return .gray
-        case .unsorted:     return .secondary
         }
     }
 
-    /// The statuses the user can explicitly assign via buttons. `unsorted` is
-    /// omitted because it's the reset state rather than an action.
+    /// The statuses the user can explicitly assign via buttons. Assigning the
+    /// active status again clears it back to `nil` rather than being an action.
     static var actionable: [BookStatus] { [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .notInterested] }
+}
+
+/// Display attributes for a status *filter facet*, where `nil` is the
+/// "No Status" facet covering books with no status set.
+extension Optional where Wrapped == BookStatus {
+    var facetLabel: String { self?.label ?? "No Status" }
+    var facetSystemImage: String? { self?.systemImage }
+    var facetTint: Color { self?.tint ?? .secondary }
 }

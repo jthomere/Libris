@@ -26,7 +26,7 @@ final class Book {
 
     /// Backing storage for the status. Stored as the raw string so it's stable
     /// across schema changes and easy to sync. Use `status` to read/write.
-    var statusRaw: String = BookStatus.unsorted.rawValue
+    var statusRaw: String = ""
 
     /// When the book was added, used as a stable secondary sort key.
     var dateAdded: Date = Date()
@@ -38,9 +38,9 @@ final class Book {
     /// removed.
     var deletedDate: Date? = nil
 
-    var status: BookStatus {
-        get { BookStatus(rawValue: statusRaw) ?? .unsorted }
-        set { statusRaw = newValue.rawValue }
+    var status: BookStatus? {
+        get { BookStatus(rawValue: statusRaw) }
+        set { statusRaw = newValue?.rawValue ?? "" }
     }
 
     /// Whether the book is currently in the trash.
@@ -58,7 +58,7 @@ final class Book {
         coverImageURL: String = "",
         note: String = "",
         tags: [String] = [],
-        status: BookStatus = .unsorted,
+        status: BookStatus? = nil,
         dateAdded: Date = Date(),
         deletedDate: Date? = nil
     ) {
@@ -73,14 +73,14 @@ final class Book {
         self.coverImageURL = coverImageURL
         self.note = note
         self.tags = tags
-        self.statusRaw = status.rawValue
+        self.statusRaw = status?.rawValue ?? ""
         self.dateAdded = dateAdded
         self.deletedDate = deletedDate
     }
 
-    /// Sets the status to `newStatus`, or resets to `.unsorted` if `newStatus`
+    /// Sets the status to `newStatus`, or clears it to `nil` if `newStatus`
     /// is already the active status.
     func toggleStatus(_ newStatus: BookStatus) {
-        status = (status == newStatus) ? .unsorted : newStatus
+        status = (status == newStatus) ? nil : newStatus
     }
 }

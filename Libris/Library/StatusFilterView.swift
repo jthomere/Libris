@@ -7,10 +7,14 @@ import SwiftUI
 
 struct StatusFilterView: View {
     let books: [Book]
-    @Binding var visibleStatuses: Set<BookStatus>
+    @Binding var visibleStatuses: Set<BookStatus?>
 
-    private let firstRowStatuses: [BookStatus] = [.unsorted, .toRead, .gaveUp, .read]
-    private let secondRowStatuses: [BookStatus] = [.notSure, .didNotFinish, .notInterested]
+    /// All facets in display order: the "No Status" facet (`nil`) first, then
+    /// each status.
+    private let allFacets: [BookStatus?] = [nil] + BookStatus.allCases.map(Optional.some)
+
+    private let firstRowStatuses: [BookStatus?] = [nil, .toRead, .gaveUp, .read]
+    private let secondRowStatuses: [BookStatus?] = [.notSure, .didNotFinish, .notInterested]
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -30,7 +34,7 @@ struct StatusFilterView: View {
 
     private var singleRow: some View {
         HStack(spacing: 10) {
-            ForEach(BookStatus.allCases) { status in
+            ForEach(allFacets, id: \.self) { status in
                 statusToggle(status)
             }
         }
@@ -39,12 +43,12 @@ struct StatusFilterView: View {
     private var twoRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                ForEach(firstRowStatuses) { status in
+                ForEach(firstRowStatuses, id: \.self) { status in
                     statusToggle(status)
                 }
             }
             HStack(spacing: 10) {
-                ForEach(secondRowStatuses) { status in
+                ForEach(secondRowStatuses, id: \.self) { status in
                     statusToggle(status)
                 }
             }
@@ -62,25 +66,28 @@ struct StatusFilterView: View {
         .fixedSize()
     }
 
-    /// A stateful toggle for whether books with `status` are shown.
-    private func statusToggle(_ status: BookStatus) -> some View {
+    /// A stateful toggle for whether books with `status` are shown. `nil` is the
+    /// "No Status" facet, covering books with no status set.
+    private func statusToggle(_ status: BookStatus?) -> some View {
         Toggle(isOn: binding(for: status)) {
-            label(status.label, count: count(for: status), systemImage: status.systemImage)
+            label(status.facetLabel, count: count(for: status), systemImage: status.facetSystemImage)
         }
-        .toggleStyle(StatusToggleStyle(tint: status.tint))
+        .toggleStyle(StatusToggleStyle(tint: status.facetTint))
     }
 
-    private func label(_ text: String, count: Int, systemImage: String) -> some View {
+    private func label(_ text: String, count: Int, systemImage: String?) -> some View {
         Label {
             Text("\(text) \(Text("\(count)").fontWeight(.semibold).monospacedDigit())")
         } icon: {
-            Image(systemName: systemImage)
+            if let systemImage {
+                Image(systemName: systemImage)
+            }
         }
         .lineLimit(1)
         .fixedSize()
     }
 
-    private func binding(for status: BookStatus) -> Binding<Bool> {
+    private func binding(for status: BookStatus?) -> Binding<Bool> {
         Binding(
             get: { visibleStatuses.contains(status) },
             set: { isShown in
@@ -93,7 +100,7 @@ struct StatusFilterView: View {
         )
     }
 
-    private func count(for status: BookStatus) -> Int {
+    private func count(for status: BookStatus?) -> Int {
         books.filter { $0.status == status }.count
     }
 }

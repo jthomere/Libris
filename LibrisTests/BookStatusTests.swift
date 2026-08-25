@@ -8,18 +8,18 @@ import Testing
 
 struct BookStatusTests {
 
-    @Test func toggleSetsStatusFromUnsorted() {
+    @Test func toggleSetsStatusFromNone() {
         let book = Book(title: "Dune", author: "Frank Herbert")
-        #expect(book.status == .unsorted)
+        #expect(book.status == nil)
 
         book.toggleStatus(.toRead)
         #expect(book.status == .toRead)
     }
 
-    @Test func toggleSameStatusResetsToUnsorted() {
+    @Test func toggleSameStatusClearsToNone() {
         let book = Book(title: "Dune", author: "Frank Herbert", status: .read)
         book.toggleStatus(.read)
-        #expect(book.status == .unsorted)
+        #expect(book.status == nil)
     }
 
     @Test func toggleDifferentStatusReplacesRatherThanResets() {
@@ -28,10 +28,10 @@ struct BookStatusTests {
         #expect(book.status == .read)
     }
 
-    @Test func statusFallsBackToUnsortedForUnknownRawValue() {
+    @Test func statusFallsBackToNoneForUnknownRawValue() {
         let book = Book(title: "Dune", author: "Frank Herbert")
         book.statusRaw = "from-a-future-schema"
-        #expect(book.status == .unsorted)
+        #expect(book.status == nil)
     }
 
     @Test func settingStatusWritesRawValue() {
@@ -40,8 +40,8 @@ struct BookStatusTests {
         #expect(book.statusRaw == "notInterested")
     }
 
-    @Test func actionableExcludesUnsorted() {
+    @Test func actionableListsEveryStatus() {
         #expect(BookStatus.actionable == [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .notInterested])
-        #expect(!BookStatus.actionable.contains(.unsorted))
+        #expect(Set(BookStatus.actionable) == Set(BookStatus.allCases))
     }
 }
