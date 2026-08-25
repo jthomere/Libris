@@ -8,7 +8,7 @@ import Testing
 
 struct BookFilterTests {
 
-    private let allStatuses = Set(BookStatus.allCases)
+    private let allStatuses = StatusPreset.all.statuses
     private let defaultVisible = StatusPreset.default.statuses
 
     private func makeLibrary() -> [Book] {
@@ -90,5 +90,15 @@ struct BookFilterTests {
     @Test func onlyNotInterestedShowsOnlyThoseBooks() {
         let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: [.notInterested], genre: nil)
         #expect(result.map(\.title) == ["Old Manual"])
+    }
+
+    @Test func noneFacetHidesAndShowsStatuslessBooks() {
+        let library = makeLibrary() + [Book(title: "Undecided", author: "Anon")]
+
+        let withoutNone = BookFilter.filter(library, searchText: "", visibleStatuses: [.toRead, .read], genre: nil)
+        #expect(!withoutNone.map(\.title).contains("Undecided"))
+
+        let withNone = BookFilter.filter(library, searchText: "", visibleStatuses: [.toRead, .read, nil], genre: nil)
+        #expect(withNone.map(\.title).contains("Undecided"))
     }
 }

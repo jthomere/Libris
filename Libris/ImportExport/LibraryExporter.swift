@@ -38,7 +38,7 @@ enum LibraryExporter {
             goodreadsURL: nonEmpty(book.goodreadsURL),
             amazonURL: nonEmpty(book.amazonURL),
             coverImageURL: nonEmpty(book.coverImageURL),
-            status: book.status.rawValue,
+            status: book.status?.rawValue,
             dateAdded: book.dateAdded
         )
     }

@@ -42,7 +42,7 @@ struct ContentView: View {
     @State private var genreFilter: String? = nil
     // The statuses currently shown. Defaults to every status except Not
     // Interested, so those books stay out of the way until the user opts in.
-    @State private var visibleStatuses: Set<BookStatus> = StatusPreset.default.statuses
+    @State private var visibleStatuses: Set<BookStatus?> = StatusPreset.default.statuses
     @State private var showingImportBooks = false
     @State private var showingImportPrompt = false
 

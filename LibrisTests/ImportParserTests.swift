@@ -49,7 +49,7 @@ struct ImportParserTests {
         #expect(book.goodreadsURL == "https://www.goodreads.com/book/show/54493401")
         #expect(book.amazonURL == "https://www.amazon.com/dp/0593135202")
         #expect(book.coverImageURL == "https://covers.openlibrary.org/b/isbn/0593135202-M.jpg")
-        #expect(book.status == .unsorted)
+        #expect(book.status == nil)
     }
 
     @Test func datelessImportedBooksShareOneDateAdded() throws {
@@ -93,7 +93,7 @@ struct ImportParserTests {
         #expect(book.dateAdded == ISO8601DateFormatter().date(from: "2021-03-04T05:06:07Z"))
     }
 
-    @Test func unknownOrMissingStatusFallsBackToUnsorted() throws {
+    @Test func unknownOrMissingStatusFallsBackToNone() throws {
         let result = try ImportParser.parse(data("""
         {
           "schemaVersion": 1,
@@ -104,8 +104,8 @@ struct ImportParserTests {
         }
         """), existingBooks: [])
 
-        #expect(result.toAdd[0].status == .unsorted)
-        #expect(result.toAdd[1].status == .unsorted)
+        #expect(result.toAdd[0].status == nil)
+        #expect(result.toAdd[1].status == nil)
     }
 
     @Test func detectsBackupMarker() throws {
