@@ -9,8 +9,6 @@ struct StatusFilterView: View {
     let books: [Book]
     @Binding var visibleStatuses: Set<BookStatus?>
 
-    /// All facets in display order: the "No Status" facet (`nil`) first, then
-    /// each status.
     private let allFacets: [BookStatus?] = [nil] + BookStatus.allCases.map(Optional.some)
 
     private let firstRowStatuses: [BookStatus?] = [nil, .toRead, .gaveUp, .read]
@@ -66,8 +64,7 @@ struct StatusFilterView: View {
         .fixedSize()
     }
 
-    /// A stateful toggle for whether books with `status` are shown. `nil` is the
-    /// "No Status" facet, covering books with no status set.
+    /// A stateful toggle for whether books with `status` are shown.
     private func statusToggle(_ status: BookStatus?) -> some View {
         Toggle(isOn: binding(for: status)) {
             label(status.facetLabel, count: count(for: status), systemImage: status.facetSystemImage)

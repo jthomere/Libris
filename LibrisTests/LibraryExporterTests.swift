@@ -26,6 +26,10 @@ struct LibraryExporterTests {
                 title: "Bare",
                 status: .toRead,
                 dateAdded: Date(timeIntervalSince1970: 1_610_000_000)
+            ),
+            Book(
+                title: "No Status",
+                dateAdded: Date(timeIntervalSince1970: 1_620_000_000)
             )
         ]
 
@@ -34,7 +38,7 @@ struct LibraryExporterTests {
 
         #expect(parsed.isBackup)
         #expect(parsed.duplicateCount == 0)
-        #expect(parsed.toAdd.count == 2)
+        #expect(parsed.toAdd.count == 3)
 
         let byTitle = Dictionary(uniqueKeysWithValues: parsed.toAdd.map { ($0.title, $0) })
 
@@ -53,6 +57,10 @@ struct LibraryExporterTests {
         #expect(bare.tags == [])
         #expect(bare.status == .toRead)
         #expect(bare.dateAdded == Date(timeIntervalSince1970: 1_610_000_000))
+
+        let noStatus = try #require(byTitle["No Status"])
+        #expect(noStatus.status == nil)
+        #expect(noStatus.dateAdded == Date(timeIntervalSince1970: 1_620_000_000))
     }
 
     @Test func backupRoundTripsBlankTitleBook() throws {

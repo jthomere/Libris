@@ -25,16 +25,14 @@ enum StatusPreset: CaseIterable {
 
     var statuses: Set<BookStatus?> {
         switch self {
-        case .all:              return Self.allFacets
-        case .default:          return Self.allFacets.subtracting([.notInterested])
+        case .all:              return Self.allOptions
+        case .default:          return Self.allOptions.subtracting([.notInterested])
         case .notInterested:    return [.notInterested]
         case .none:             return []
         }
     }
 
-    /// Every filter facet: each status plus `nil`, the "None" facet for books
-    /// with no status set.
-    static var allFacets: Set<BookStatus?> { Set(BookStatus.allCases.map(Optional.some) + [nil]) }
+    static var allOptions: Set<BookStatus?> { Set(BookStatus.allCases.map(Optional.some) + [nil]) }
 
     /// The preset whose statuses equal `statuses`, or `nil` when the selection
     /// is custom.

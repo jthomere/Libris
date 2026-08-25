@@ -61,8 +61,6 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
     static var actionable: [BookStatus] { [.toRead, .gaveUp, .read, .notSure, .didNotFinish, .notInterested] }
 }
 
-/// Display attributes for a status *filter facet*, where `nil` is the
-/// "No Status" facet covering books with no status set.
 extension Optional where Wrapped == BookStatus {
     var facetLabel: String { self?.label ?? "No Status" }
     var facetSystemImage: String? { self?.systemImage }
