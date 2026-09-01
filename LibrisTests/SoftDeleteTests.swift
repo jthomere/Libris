@@ -61,7 +61,7 @@ struct SoftDeleteTests {
         let context = try makeContext()
         context.insert(Book(title: "Dune", author: "Frank Herbert", deletedDate: Date()))
 
-        var tracker = DuplicateTracker(existingBooks: try activeBooks(in: context))
+        let tracker = DuplicateTracker(existingBooks: try activeBooks(in: context))
         #expect(tracker.isDuplicate(title: "Dune", author: "Frank Herbert", isbn: "") == false)
     }
 }

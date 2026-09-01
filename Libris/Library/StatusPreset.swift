@@ -5,9 +5,7 @@
 
 import Foundation
 
-/// A named selection of statuses for the status filter. `custom` isn't a preset
-/// to apply — it's what the current selection reads as when it matches none of
-/// the named ones.
+/// A named selection of statuses, applied from the Status filter menu's presets.
 enum StatusPreset: CaseIterable {
     case all
     case `default`
@@ -33,10 +31,4 @@ enum StatusPreset: CaseIterable {
     }
 
     static var allOptions: Set<BookStatus?> { Set(BookStatus.allCases.map(Optional.some) + [nil]) }
-
-    /// The preset whose statuses equal `statuses`, or `nil` when the selection
-    /// is custom.
-    static func matching(_ statuses: Set<BookStatus?>) -> StatusPreset? {
-        allCases.first { $0.statuses == statuses }
-    }
 }
