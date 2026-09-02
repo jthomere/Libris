@@ -53,9 +53,8 @@ struct GenreFilterMenu: View {
     }
 
     private static let fictionMarkers = [
-        "fiction", "novel", "novella", "fantasy", "sci-fi", "mystery", "thriller",
-        "romance", "horror", "dystopia", "fairy tale", "fairytale", "mythology",
-        "folklore", "saga", "graphic novel", "comic", "manga", "western", "fable"
+        "novel", "novella", "fantasy", "science fiction", "mystery", "thriller",
+        "romance", "horror"
     ]
 
     private static func isFiction(_ genre: String) -> Bool {
