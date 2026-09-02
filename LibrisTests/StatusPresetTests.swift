@@ -8,10 +8,6 @@ import Testing
 
 struct StatusPresetTests {
 
-    @Test func allIncludesEveryStatusAndNoStatus() {
-        #expect(StatusPreset.all.statuses == Set(BookStatus.allCases.map(Optional.some) + [nil]))
-    }
-
     @Test func keepingIsEverythingExceptNotInterested() {
         let expected = Set(BookStatus.allCases.map(Optional.some) + [nil]).subtracting([.notInterested])
         #expect(StatusPreset.keeping.statuses == expected)

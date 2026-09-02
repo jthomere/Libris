@@ -8,7 +8,7 @@ import Testing
 
 struct BookFilterTests {
 
-    private let allStatuses = StatusPreset.all.statuses
+    private let allStatuses = StatusPreset.allOptions
     private let keepingVisible = StatusPreset.keeping.statuses
 
     private func makeLibrary() -> [Book] {
