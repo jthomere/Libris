@@ -5,9 +5,6 @@
 
 import SwiftUI
 
-/// The toolbar pull-down for filtering by reading status. Multi-select and
-/// text-only: the label is the status's name when exactly one is chosen, and
-/// "Status" otherwise. Presets sit below the individual toggles.
 struct StatusFilterMenu: View {
     @Binding var selection: Set<BookStatus?>
 

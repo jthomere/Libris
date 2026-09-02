@@ -54,7 +54,6 @@ struct BookGridView: View {
         }
     }
 
-    /// A pinned header naming the section (the current sort key's bucket).
     private func sectionHeader(_ title: String) -> some View {
         HStack {
             Text(title)

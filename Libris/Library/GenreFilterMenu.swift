@@ -5,9 +5,6 @@
 
 import SwiftUI
 
-/// The toolbar pull-down for filtering by genre. Multi-select and text-only:
-/// the label is the genre's name when exactly one is chosen, and "Genre"
-/// otherwise. Fiction / Non-Fiction presets sit below the individual toggles.
 struct GenreFilterMenu: View {
     @Binding var selection: Set<String>
     let availableGenres: [String]
@@ -46,9 +43,8 @@ struct GenreFilterMenu: View {
         )
     }
 
-    // The available genres on each side of a rough fiction / non-fiction split.
-    // A preset is disabled when its side is empty, so applying it can never leave
-    // an empty selection (which would read as "all genres").
+    // A preset is disabled when its side is empty, so applying it can't leave an
+    // empty selection (which would read as "all genres").
     private var fictionGenres: Set<String> { genres(fiction: true) }
     private var nonFictionGenres: Set<String> { genres(fiction: false) }
 
@@ -56,8 +52,6 @@ struct GenreFilterMenu: View {
         Set(availableGenres.filter { Self.isFiction($0) == fiction })
     }
 
-    /// Classifies a genre as fiction if it names a fiction form; everything else
-    /// — memoir, history, science, reference, and the like — is non-fiction.
     private static let fictionMarkers = [
         "fiction", "novel", "novella", "fantasy", "sci-fi", "mystery", "thriller",
         "romance", "horror", "dystopia", "fairy tale", "fairytale", "mythology",

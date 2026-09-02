@@ -24,8 +24,6 @@ struct ContentView: View {
 
     // Built as FetchDescriptors rather than inline `@Query(filter:sort:)` to
     // keep the predicate-plus-sort expressions within the type-checker's reach.
-    // The grid's order is applied in memory via `BookSort`, so the fetch order
-    // here is just a stable starting point.
     private static var activeBooksDescriptor: FetchDescriptor<Book> {
         FetchDescriptor<Book>(
             predicate: #Predicate { $0.deletedDate == nil },
@@ -219,8 +217,6 @@ struct ContentView: View {
             .help("Show deleted books, to restore or permanently delete them")
         }
 
-        // A flexible gap pushes filter and sort to the trailing edge, beside
-        // the search field, keeping them apart from the action buttons.
         ToolbarSpacer(.flexible, placement: .primaryAction)
 
         ToolbarItemGroup(placement: .primaryAction) {
@@ -244,8 +240,6 @@ struct ContentView: View {
         return tags.sorted()
     }
 
-    /// The status filter as the selected set, decoded from storage. A sentinel
-    /// token stands in for the nil "No Status" facet.
     private var selectedStatuses: Set<BookStatus?> {
         // A stale or unparseable stored value falls back to the default preset
         // rather than decoding to an empty "Hide All" that blanks the grid.
@@ -283,8 +277,6 @@ struct ContentView: View {
         )
     }
 
-    /// The statuses `BookFilter` should show — exactly the selected set. An
-    /// empty set shows nothing (the "Hide All" preset).
     private var visibleStatuses: Set<BookStatus?> {
         selectedStatuses
     }

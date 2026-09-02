@@ -5,9 +5,6 @@
 
 import Foundation
 
-/// How the library grid is ordered: a key plus a direction. Each key knows the
-/// direction it starts in when first chosen, and how to bucket books into the
-/// grid's sections.
 struct BookSort: Equatable {
     enum Key: String, CaseIterable, Identifiable {
         case dateAdded
@@ -26,7 +23,6 @@ struct BookSort: Equatable {
             }
         }
 
-        /// The direction applied when the user first selects this key.
         var startsAscending: Bool {
             switch self {
             case .title, .author: return true    // A→Z
@@ -41,9 +37,8 @@ struct BookSort: Equatable {
 
     static let `default` = BookSort(key: .dateAdded, ascending: false)
 
-    /// Sorts `books`, then groups them into the grid's sections in display
-    /// order. Books are ordered first and bucketed while preserving that order,
-    /// so both the sections and their contents follow the current direction.
+    // Sorts first, then buckets in that order, so both the sections and their
+    // contents follow the current direction.
     func sections(from books: [Book]) -> [BookSection] {
         let sorted = books.sorted(by: areInOrder)
         var sections: [BookSection] = []
@@ -107,24 +102,20 @@ struct BookSort: Equatable {
         }
     }
 
-    /// A sort key that orders authors by last name, then by the full name so
-    /// authors who share a surname stay in a stable first-name order.
+    // Surname, then full name (via a NUL separator) so shared surnames keep a
+    // stable first-name order.
     private func authorKey(_ author: String) -> String {
         "\(authorLastName(author))\u{0}\(author)"
     }
 
-    /// The last whitespace-separated word of an author's name, used as the
-    /// surname for sorting and section grouping ("" for an empty name).
     private func authorLastName(_ author: String) -> String {
         let trimmed = author.whitespaceTrimmed
         guard let last = trimmed.split(whereSeparator: \.isWhitespace).last else { return trimmed }
         return String(last)
     }
 
-    /// The first-letter bucket for a title or author, or "#" for anything that
-    /// doesn't start with a letter (numbers, symbols, or an empty string). Uses
-    /// only the first character of the uppercased result, since some letters
-    /// expand when uppercased (e.g. "ß" → "SS").
+    // First letter of the uppercased result only — some letters expand when
+    // uppercased ("ß" → "SS") — or "#" when it isn't a letter.
     private func alphaBucket(_ string: String) -> String {
         guard let first = string.whitespaceTrimmed.first,
               let letter = String(first).uppercased().first,

@@ -5,8 +5,6 @@
 
 import SwiftUI
 
-/// The toolbar pull-down for the grid's order. Finder-style: the active key
-/// shows a direction arrow; re-selecting it flips the direction.
 struct SortMenu: View {
     @Binding var sort: BookSort
 
