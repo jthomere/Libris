@@ -251,6 +251,7 @@ struct ContentView: View {
         guard let tokens = SelectionCodec.decode(statusFilterJSON) else {
             return StatusPreset.default.statuses
         }
+        if tokens.isEmpty { return [] }   // "[]" is an intentional Hide All
         var result: Set<BookStatus?> = []
         for token in tokens {
             if token == Self.statusNilToken {
@@ -259,7 +260,8 @@ struct ContentView: View {
                 result.insert(status)
             }
         }
-        return result
+        // Every token was stale/unknown → fall back instead of blanking the grid.
+        return result.isEmpty ? StatusPreset.default.statuses : result
     }
 
     private var statusFilterBinding: Binding<Set<BookStatus?>> {
