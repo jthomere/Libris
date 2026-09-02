@@ -8,12 +8,10 @@ import SwiftUI
 struct StatusFilterMenu: View {
     @Binding var selection: Set<BookStatus?>
 
-    private let allFacets: [BookStatus?] = BookStatus.allCases.map(Optional.some) + [nil]
-
     var body: some View {
         Menu(currentLabel) {
-            ForEach(allFacets, id: \.self) { facet in
-                Toggle(facet.facetLabel, isOn: binding(for: facet))
+            ForEach(BookStatus.allCases) { status in
+                Toggle(status.label, isOn: binding(for: status))
             }
 
             Section("Presets") {

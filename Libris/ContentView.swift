@@ -236,7 +236,7 @@ struct ContentView: View {
         // A stale or unparseable stored value falls back to the default preset
         // rather than decoding to an empty "Hide All" that blanks the grid.
         guard let tokens = SelectionCodec.decode(statusFilterJSON) else {
-            return StatusPreset.default.statuses
+            return StatusPreset.keeping.statuses
         }
         if tokens.isEmpty { return [] }   // "[]" is an intentional Hide All
         var result: Set<BookStatus?> = []
@@ -248,7 +248,7 @@ struct ContentView: View {
             }
         }
         // Every token was stale/unknown → fall back instead of blanking the grid.
-        return result.isEmpty ? StatusPreset.default.statuses : result
+        return result.isEmpty ? StatusPreset.keeping.statuses : result
     }
 
     private var statusFilterBinding: Binding<Set<BookStatus?>> {
@@ -277,7 +277,7 @@ struct ContentView: View {
 
     private static let statusNilToken = "__none__"
     private static let defaultStatusJSON = SelectionCodec.encode(
-        StatusPreset.default.statuses.map { $0?.rawValue ?? statusNilToken }
+        StatusPreset.keeping.statuses.map { $0?.rawValue ?? statusNilToken }
     )
 
     /// The current sort, decoded from its persisted key and direction.

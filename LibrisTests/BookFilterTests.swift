@@ -9,7 +9,7 @@ import Testing
 struct BookFilterTests {
 
     private let allStatuses = StatusPreset.all.statuses
-    private let defaultVisible = StatusPreset.default.statuses
+    private let keepingVisible = StatusPreset.keeping.statuses
 
     private func makeLibrary() -> [Book] {
         [
@@ -76,7 +76,7 @@ struct BookFilterTests {
     }
 
     @Test func notInterestedHiddenByDefault() {
-        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: defaultVisible, genres: [])
+        let result = BookFilter.filter(makeLibraryWithNotInterested(), searchText: "", visibleStatuses: keepingVisible, genres: [])
         #expect(!result.map(\.title).contains("Old Manual"))
         #expect(result.count == 3)
     }
