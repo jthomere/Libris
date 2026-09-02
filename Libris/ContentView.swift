@@ -42,9 +42,10 @@ struct ContentView: View {
 
     @State private var searchText = ""
 
-    // Filter and sort choices persist across launches. The status and genre
-    // multi-selects are stored as JSON arrays of tokens (status uses a sentinel
-    // for the nil "No Status" facet); an empty selection means "show all".
+    // Filter and sort choices persist across launches, stored as JSON arrays of
+    // tokens (status uses a sentinel for the nil "No Status" facet). An empty
+    // status selection is "Hide All" (shows nothing); an empty genre selection
+    // shows all genres.
     @AppStorage("libraryStatusFilter") private var statusFilterJSON = ContentView.defaultStatusJSON
     @AppStorage("libraryGenreFilter") private var genreFilterJSON = ""
     @AppStorage("librarySortKey") private var sortKeyStorage = BookSort.default.key.rawValue

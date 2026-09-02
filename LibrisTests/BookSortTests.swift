@@ -40,6 +40,12 @@ struct BookSortTests {
         #expect(byBucket["B"] == ["Banana"])
     }
 
+    @Test func titleBucketStaysSingleCharacterWhenUppercaseExpands() {
+        // "ß".uppercased() is "SS"; the bucket must still be a single letter.
+        let sections = BookSort(key: .title, ascending: true).sections(from: [book("ßfoo")])
+        #expect(sections.map(\.title) == ["S"])
+    }
+
     // MARK: - Rating
 
     @Test func ratingDescendingHighestFirstThenUnrated() {

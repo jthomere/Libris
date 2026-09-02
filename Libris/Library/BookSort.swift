@@ -122,10 +122,13 @@ struct BookSort: Equatable {
     }
 
     /// The first-letter bucket for a title or author, or "#" for anything that
-    /// doesn't start with a letter (numbers, symbols, or an empty string).
+    /// doesn't start with a letter (numbers, symbols, or an empty string). Uses
+    /// only the first character of the uppercased result, since some letters
+    /// expand when uppercased (e.g. "ß" → "SS").
     private func alphaBucket(_ string: String) -> String {
-        guard let first = string.whitespaceTrimmed.first else { return "#" }
-        let upper = String(first).uppercased()
-        return upper.first?.isLetter == true ? upper : "#"
+        guard let first = string.whitespaceTrimmed.first,
+              let letter = String(first).uppercased().first,
+              letter.isLetter else { return "#" }
+        return String(letter)
     }
 }
