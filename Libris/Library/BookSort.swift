@@ -85,10 +85,10 @@ struct BookSort: Equatable {
     private func sectionBucket(for book: Book) -> (id: String, title: String) {
         switch key {
         case .dateAdded:
-            // One section per import: every book in a batch shares an instant.
-            let date = book.dateAdded
-            return (String(date.timeIntervalSinceReferenceDate),
-                    date.formatted(date: .long, time: .shortened))
+            // Bucket by the displayed minute so a section's id is its header —
+            // no two sections can then show the same title.
+            let title = book.dateAdded.formatted(date: .long, time: .shortened)
+            return (title, title)
         case .rating:
             if book.rating <= 0 { return ("unrated", "Unrated") }
             let stars = min(max(Int(book.rating.rounded()), 1), 5)

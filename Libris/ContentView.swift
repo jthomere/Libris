@@ -165,12 +165,6 @@ struct ContentView: View {
             } message: { message in
                 Text(message)
             }
-            .onChange(of: availableGenres) { _, genres in
-                let pruned = selectedGenres.intersection(Set(genres))
-                if pruned != selectedGenres {
-                    genreFilterJSON = SelectionCodec.encode(pruned)
-                }
-            }
         }
         .frame(minWidth: 640, minHeight: 480)
     }
@@ -222,9 +216,7 @@ struct ContentView: View {
         ToolbarItemGroup(placement: .primaryAction) {
             SortMenu(sort: sortSelection)
             StatusFilterMenu(selection: statusFilterBinding)
-            if !availableGenres.isEmpty {
-                GenreFilterMenu(selection: genreFilterBinding, availableGenres: availableGenres)
-            }
+            GenreFilterMenu(selection: genreFilterBinding, availableGenres: availableGenres)
         }
     }
 
@@ -267,7 +259,9 @@ struct ContentView: View {
     }
 
     private var selectedGenres: Set<String> {
-        Set(SelectionCodec.decode(genreFilterJSON) ?? [])
+        // Drop genres no longer in the library so a stale saved value resolves
+        // to "all genres" instead of matching nothing and blanking the grid.
+        Set(SelectionCodec.decode(genreFilterJSON) ?? []).intersection(availableGenres)
     }
 
     private var genreFilterBinding: Binding<Set<String>> {
