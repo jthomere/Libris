@@ -5,19 +5,32 @@
 
 import SwiftUI
 
+/// How the library grid renders each book: the full detail card, or a compact
+/// cover-forward tile.
+enum LibraryCardStyle: String, CaseIterable {
+    case full
+    case mini
+}
+
 struct BookGridView: View {
     /// The sections to display (already filtered and sorted by the caller).
     let sections: [BookSection]
     /// Whether the underlying library is empty, distinguishing "no books yet"
     /// from "no matches for the current filters".
     let libraryIsEmpty: Bool
+    let style: LibraryCardStyle
     let onEdit: (Book) -> Void
     let onDelete: (Book) -> Void
     /// Moves every currently-visible book to the Trash.
     let onDeleteAllVisible: () -> Void
 
-    // Adaptive grid of book cards.
-    private let columns = [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16)]
+    // Adaptive grid of book cards, sized to the current card style.
+    private var columns: [GridItem] {
+        switch style {
+        case .full: [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16)]
+        case .mini: [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16)]
+        }
+    }
 
     private var totalCount: Int {
         sections.reduce(0) { $0 + $1.books.count }
@@ -32,12 +45,8 @@ struct BookGridView: View {
                     ForEach(sections) { section in
                         Section {
                             ForEach(section.books) { book in
-                                BookCardView(
-                                    book: book,
-                                    onEdit: { onEdit(book) },
-                                    onDelete: { onDelete(book) }
-                                )
-                                .frame(maxHeight: .infinity, alignment: .top)
+                                card(for: book)
+                                    .frame(maxHeight: .infinity, alignment: .top)
                             }
                         } header: {
                             sectionHeader(section.title)
@@ -52,6 +61,24 @@ struct BookGridView: View {
             if !sections.isEmpty {
                 bottomBar
             }
+        }
+    }
+
+    @ViewBuilder
+    private func card(for book: Book) -> some View {
+        switch style {
+        case .full:
+            BookCardView(
+                book: book,
+                onEdit: { onEdit(book) },
+                onDelete: { onDelete(book) }
+            )
+        case .mini:
+            BookMiniCardView(
+                book: book,
+                onEdit: { onEdit(book) },
+                onDelete: { onDelete(book) }
+            )
         }
     }
 

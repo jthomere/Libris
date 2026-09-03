@@ -48,6 +48,7 @@ struct ContentView: View {
     @AppStorage("libraryGenreFilter") private var genreFilterJSON = ""
     @AppStorage("librarySortKey") private var sortKeyStorage = BookSort.default.key.rawValue
     @AppStorage("librarySortAscending") private var sortAscending = BookSort.default.ascending
+    @AppStorage("libraryCardStyle") private var cardStyle: LibraryCardStyle = .full
 
     @State private var showingImportBooks = false
     @State private var showingImportPrompt = false
@@ -85,6 +86,7 @@ struct ContentView: View {
             BookGridView(
                 sections: sections,
                 libraryIsEmpty: books.isEmpty,
+                style: cardStyle,
                 onEdit: { editingBook = $0 },
                 onDelete: { deleteBook($0) },
                 onDeleteAllVisible: { confirmingDeleteAllVisible = true }
@@ -214,6 +216,13 @@ struct ContentView: View {
         ToolbarSpacer(.flexible, placement: .primaryAction)
 
         ToolbarItemGroup(placement: .primaryAction) {
+            Picker("View", selection: $cardStyle) {
+                Image(systemName: "square.grid.2x2").tag(LibraryCardStyle.full)
+                Image(systemName: "square.grid.3x3").tag(LibraryCardStyle.mini)
+            }
+            .pickerStyle(.segmented)
+            .help("Switch between full and mini cards")
+
             SortMenu(sort: sortSelection)
             StatusFilterMenu(selection: statusFilterBinding)
             GenreFilterMenu(selection: genreFilterBinding, availableGenres: availableGenres)
