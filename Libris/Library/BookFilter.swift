@@ -6,11 +6,11 @@
 import Foundation
 
 enum BookFilter {
-    static func filter(_ books: [Book], searchText: String, visibleStatuses: Set<BookStatus?>, genre: String?) -> [Book] {
+    static func filter(_ books: [Book], searchText: String, visibleStatuses: Set<BookStatus?>, genres: Set<String>) -> [Book] {
         let query = searchText.whitespaceTrimmed.lowercased()
         return books.filter { book in
             guard visibleStatuses.contains(book.status) else { return false }
-            if let genre, book.genre != genre { return false }
+            if !genres.isEmpty, !genres.contains(book.genre) { return false }
             if !query.isEmpty {
                 let matchesTitle = book.title.lowercased().contains(query)
                 let matchesAuthor = book.author.lowercased().contains(query)

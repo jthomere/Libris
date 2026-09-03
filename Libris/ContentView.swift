@@ -11,8 +11,8 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
     // Fetch every book still in the library (deleted books are excluded at the
-    // fetch, so every derived view below sees only active books) and filter in
-    // memory. A personal library is small, and in-memory filtering keeps the
+    // fetch, so every derived view below sees only active books) and filter and
+    // sort in memory. A personal library is small, and in-memory work keeps the
     // CloudKit-backed store simple and robust.
     @Query(ContentView.activeBooksDescriptor)
     private var books: [Book]
@@ -27,7 +27,7 @@ struct ContentView: View {
     private static var activeBooksDescriptor: FetchDescriptor<Book> {
         FetchDescriptor<Book>(
             predicate: #Predicate { $0.deletedDate == nil },
-            sortBy: [SortDescriptor(\.title), SortDescriptor(\.dateAdded)]
+            sortBy: [SortDescriptor(\.dateAdded, order: .reverse)]
         )
     }
 
@@ -39,10 +39,16 @@ struct ContentView: View {
     }
 
     @State private var searchText = ""
-    @State private var genreFilter: String? = nil
-    // The statuses currently shown. Defaults to every status except Not
-    // Interested, so those books stay out of the way until the user opts in.
-    @State private var visibleStatuses: Set<BookStatus?> = StatusPreset.default.statuses
+
+    // Filter and sort choices persist across launches, stored as JSON arrays of
+    // tokens (status uses a sentinel for the nil "No Status" facet). An empty
+    // status selection is "Hide All" (shows nothing); an empty genre selection
+    // shows all genres.
+    @AppStorage("libraryStatusFilter") private var statusFilterJSON = ContentView.defaultStatusJSON
+    @AppStorage("libraryGenreFilter") private var genreFilterJSON = ""
+    @AppStorage("librarySortKey") private var sortKeyStorage = BookSort.default.key.rawValue
+    @AppStorage("librarySortAscending") private var sortAscending = BookSort.default.ascending
+
     @State private var showingImportBooks = false
     @State private var showingImportPrompt = false
 
@@ -68,8 +74,6 @@ struct ContentView: View {
     // A brief, self-dismissing message shown after a delete (nil = none).
     @State private var toast: ToastMessage? = nil
 
-    @State private var showingRecentlyAdded = false
-
     // Drives the Recently Deleted (trash) sheet.
     @State private var showingTrash = false
 
@@ -78,28 +82,14 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                FilterBarView(
-                    searchText: $searchText,
-                    genreFilter: $genreFilter,
-                    availableGenres: availableGenres,
-                    showingRecentlyAdded: $showingRecentlyAdded,
-                    recentlyAddedCount: mostRecentlyAdded.count
-                )
-                Divider()
-                StatusFilterView(
-                    books: books,
-                    visibleStatuses: $visibleStatuses
-                )
-                Divider()
-                BookGridView(
-                    books: visibleBooks,
-                    libraryIsEmpty: books.isEmpty,
-                    onEdit: { editingBook = $0 },
-                    onDelete: { deleteBook($0) },
-                    onDeleteAllVisible: { confirmingDeleteAllVisible = true }
-                )
-            }
+            BookGridView(
+                sections: sections,
+                libraryIsEmpty: books.isEmpty,
+                onEdit: { editingBook = $0 },
+                onDelete: { deleteBook($0) },
+                onDeleteAllVisible: { confirmingDeleteAllVisible = true }
+            )
+            .searchable(text: $searchText, prompt: "Search title or author")
             .toast($toast)
             .navigationTitle("Libris")
             .toolbar { toolbar }
@@ -154,7 +144,7 @@ struct ContentView: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                let count = visibleBooks.count
+                let count = filteredBooks.count
                 Text("This moves \(count) book\(count == 1 ? "" : "s") to the Trash. You can restore \(count == 1 ? "it" : "them") from Recently Deleted.")
             }
             .alert("Import this backup?", isPresented: $pendingBackup.isPresent(), presenting: pendingBackup) { parsed in
@@ -175,11 +165,6 @@ struct ContentView: View {
             } message: { message in
                 Text(message)
             }
-            .onChange(of: availableGenres) { _, genres in
-                if let genreFilter, !genres.contains(genreFilter) {
-                    self.genreFilter = nil
-                }
-            }
         }
         .frame(minWidth: 640, minHeight: 480)
     }
@@ -188,7 +173,7 @@ struct ContentView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItemGroup {
+        ToolbarItemGroup(placement: .primaryAction) {
             Button {
                 showingImportPrompt = true
             } label: {
@@ -225,6 +210,14 @@ struct ContentView: View {
             }
             .help("Show deleted books, to restore or permanently delete them")
         }
+
+        ToolbarSpacer(.flexible, placement: .primaryAction)
+
+        ToolbarItemGroup(placement: .primaryAction) {
+            SortMenu(sort: sortSelection)
+            StatusFilterMenu(selection: statusFilterBinding)
+            GenreFilterMenu(selection: genreFilterBinding, availableGenres: availableGenres)
+        }
     }
 
     // MARK: - Derived data
@@ -239,17 +232,76 @@ struct ContentView: View {
         return tags.sorted()
     }
 
-    private var mostRecentlyAdded: [Book] {
-        guard let newest = books.map(\.dateAdded).max() else { return [] }
-        return books.filter { $0.dateAdded == newest }
+    private var selectedStatuses: Set<BookStatus?> {
+        // A stale or unparseable stored value falls back to the default preset
+        // rather than decoding to an empty "Hide All" that blanks the grid.
+        guard let tokens = SelectionCodec.decode(statusFilterJSON) else {
+            return StatusPreset.keeping.statuses
+        }
+        if tokens.isEmpty { return [] }   // "[]" is an intentional Hide All
+        var result: Set<BookStatus?> = []
+        for token in tokens {
+            if token == Self.statusNilToken {
+                result.insert(nil)
+            } else if let status = BookStatus(rawValue: token) {
+                result.insert(status)
+            }
+        }
+        // Every token was stale/unknown → fall back instead of blanking the grid.
+        return result.isEmpty ? StatusPreset.keeping.statuses : result
     }
 
-    private var visibleBooks: [Book] {
-        var result = BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genre: genreFilter)
-        if showingRecentlyAdded, let newest = books.map(\.dateAdded).max() {
-            result = result.filter { $0.dateAdded == newest }
-        }
-        return result
+    private var statusFilterBinding: Binding<Set<BookStatus?>> {
+        Binding(
+            get: { selectedStatuses },
+            set: { statusFilterJSON = SelectionCodec.encode($0.map { $0?.rawValue ?? Self.statusNilToken }) }
+        )
+    }
+
+    private var selectedGenres: Set<String> {
+        // Drop genres no longer in the library so a stale saved value resolves
+        // to "all genres" instead of matching nothing and blanking the grid.
+        Set(SelectionCodec.decode(genreFilterJSON) ?? []).intersection(availableGenres)
+    }
+
+    private var genreFilterBinding: Binding<Set<String>> {
+        Binding(
+            get: { selectedGenres },
+            set: { genreFilterJSON = SelectionCodec.encode($0) }
+        )
+    }
+
+    private var visibleStatuses: Set<BookStatus?> {
+        selectedStatuses
+    }
+
+    private static let statusNilToken = "__none__"
+    private static let defaultStatusJSON = SelectionCodec.encode(
+        StatusPreset.keeping.statuses.map { $0?.rawValue ?? statusNilToken }
+    )
+
+    /// The current sort, decoded from its persisted key and direction.
+    private var sort: BookSort {
+        BookSort(key: BookSort.Key(rawValue: sortKeyStorage) ?? BookSort.default.key,
+                 ascending: sortAscending)
+    }
+
+    private var sortSelection: Binding<BookSort> {
+        Binding(
+            get: { sort },
+            set: { newValue in
+                sortKeyStorage = newValue.key.rawValue
+                sortAscending = newValue.ascending
+            }
+        )
+    }
+
+    private var filteredBooks: [Book] {
+        BookFilter.filter(books, searchText: searchText, visibleStatuses: visibleStatuses, genres: selectedGenres)
+    }
+
+    private var sections: [BookSection] {
+        sort.sections(from: filteredBooks)
     }
 
     private var exportFilename: String {
@@ -282,7 +334,7 @@ struct ContentView: View {
 
     /// Moves every currently-visible book to the Trash.
     private func deleteAllVisible() {
-        let booksToDelete = visibleBooks
+        let booksToDelete = filteredBooks
         let now = Date()
         for book in booksToDelete {
             book.deletedDate = now
