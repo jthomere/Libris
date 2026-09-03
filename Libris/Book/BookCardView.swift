@@ -13,29 +13,28 @@ struct BookCardView: View {
     var onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             header
-            Divider()
-            statusButtons
-            ratingRow
 
-            if !book.genre.isEmpty {
-                labeledValue("Genre", book.genre)
-            }
             if !book.bookDescription.isEmpty {
-                labeledValue("Description", book.bookDescription)
+                Text(book.bookDescription)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if !book.note.isEmpty {
-                labeledValue("Note", book.note)
+                Text(book.note)
+                    .font(.body.italic())
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if !book.tags.isEmpty {
-                labeled("Tags") { tagChips }
+                tagChips
             }
-            if !linkItems.isEmpty {
-                linksRow
-            }
+            bottomBar
         }
-        .padding(16)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
@@ -43,24 +42,98 @@ struct BookCardView: View {
         )
     }
 
-    // MARK: - Header (cover + title + author + edit/delete)
+    // MARK: - Header (cover + rating | genre + title + author | status | actions)
 
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             coverImage
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
+                if !book.genre.isEmpty {
+                    Text(book.genre.uppercased())
+                        .font(.caption.weight(.bold))
+                        .tracking(0.6)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(book.title.isEmpty ? "Untitled" : book.title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(book.title.isEmpty ? .secondary : .primary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(book.author.isEmpty ? "Unknown author" : book.author)
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if book.rating > 0 {
+                    StarRatingView(rating: .constant(book.rating), isEditable: false)
+                        .font(.caption)
+                        .padding(.top, 2)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
+            statusPile
+        }
+    }
 
+    @ViewBuilder
+    private var coverImage: some View {
+        if let url = URLNormalizer.normalized(from: book.coverImageURL) {
+            CachedCoverImage(url: url, width: 100, height: 150)
+        }
+    }
+
+    // MARK: - Status (a vertical pile of named quick-action toggles)
+
+    private var statusPile: some View {
+        VStack(alignment: .center, spacing: 4) {
+            ForEach(BookStatus.actionable) { status in
+                let isActive = book.status == status
+                Button {
+                    book.toggleStatus(status)
+                } label: {
+                    Text(status.label)
+                        .font(isActive ? .subheadline.weight(.semibold) : .caption)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .padding(.vertical, isActive ? 6 : 4)
+                        .frame(width: isActive ? 108 : 96)
+                        .foregroundStyle(isActive ? AnyShapeStyle(status.onTint) : AnyShapeStyle(.secondary))
+                        .background(
+                            isActive ? AnyShapeStyle(status.tint) : AnyShapeStyle(.quaternary),
+                            in: Capsule()
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(isActive ? "Tap again to clear the status" : "Mark as \(status.label)")
+            }
+        }
+        .frame(width: 116, alignment: .center)
+    }
+
+    // MARK: - Tags
+
+    private var tagChips: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(book.tags, id: \.self) { tag in
+                Text(tag)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.tint.opacity(0.15), in: Capsule())
+            }
+        }
+    }
+
+    // MARK: - Bottom bar (links on the left, edit/delete in the lower-right corner)
+
+    private var bottomBar: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            if !linkItems.isEmpty {
+                linksRow
+            }
+            Spacer(minLength: 8)
             Button(action: onEdit) {
                 Image(systemName: "pencil")
             }
@@ -72,70 +145,6 @@ struct BookCardView: View {
             }
             .buttonStyle(.borderless)
             .help("Delete this book")
-        }
-    }
-
-    @ViewBuilder
-    private var coverImage: some View {
-        if let url = URLNormalizer.normalized(from: book.coverImageURL) {
-            CachedCoverImage(url: url)
-        }
-    }
-
-    // MARK: - Status buttons (the one interactive quick-action)
-
-    private let statusColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
-
-    private var statusButtons: some View {
-        LazyVGrid(columns: statusColumns, spacing: 8) {
-            ForEach(BookStatus.actionable) { status in
-                let isActive = book.status == status
-                Button {
-                    book.toggleStatus(status)
-                } label: {
-                    Label(status.label, systemImage: status.systemImage)
-                        .font(.caption)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(isActive ? status.tint : .secondary)
-                .background(
-                    isActive ? status.tint.opacity(0.15) : .clear,
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
-                .help(isActive ? "Tap again to clear the status" : "Mark as \(status.label)")
-            }
-        }
-    }
-
-    // MARK: - Rating (read-only; imported)
-
-    private var ratingRow: some View {
-        HStack(spacing: 8) {
-            Text("Rating")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(width: 90, alignment: .leading)
-            StarRatingView(rating: .constant(book.rating), isEditable: false)
-            Spacer()
-            Text(String(format: "%.1f", book.rating))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    // MARK: - Tags
-
-    private var tagChips: some View {
-        FlowLayout(spacing: 6) {
-            ForEach(book.tags, id: \.self) { tag in
-                Text(tag)
-                    .font(.caption2)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(.tint.opacity(0.15), in: Capsule())
-            }
         }
     }
 
@@ -160,7 +169,7 @@ struct BookCardView: View {
             ForEach(linkItems) { item in
                 Link(destination: item.url) {
                     Label(item.label, systemImage: item.systemImage)
-                        .font(.caption)
+                        .font(.footnote)
                 }
                 .help("Open \(item.label)")
             }
@@ -172,28 +181,6 @@ struct BookCardView: View {
         let systemImage: String
         let url: URL
         var id: String { label }
-    }
-
-    // MARK: - Reusable display builders
-
-    private func labeledValue(_ label: String, _ value: String) -> some View {
-        labeled(label) {
-            Text(value)
-                .font(.body)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func labeled<Content: View>(
-        _ label: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            content()
-        }
     }
 }
 
@@ -212,6 +199,6 @@ struct BookCardView: View {
         status: .toRead
     )
     return BookCardView(book: sample, onEdit: {}, onDelete: {})
-        .frame(width: 460)
+        .frame(width: 360)
         .padding()
 }

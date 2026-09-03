@@ -17,7 +17,7 @@ struct BookGridView: View {
     let onDeleteAllVisible: () -> Void
 
     // Adaptive grid of book cards.
-    private let columns = [GridItem(.adaptive(minimum: 440, maximum: 600), spacing: 16)]
+    private let columns = [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16)]
 
     private var totalCount: Int {
         sections.reduce(0) { $0 + $1.books.count }
@@ -37,6 +37,7 @@ struct BookGridView: View {
                                     onEdit: { onEdit(book) },
                                     onDelete: { onDelete(book) }
                                 )
+                                .frame(maxHeight: .infinity, alignment: .top)
                             }
                         } header: {
                             sectionHeader(section.title)

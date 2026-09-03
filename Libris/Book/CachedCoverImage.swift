@@ -3,6 +3,8 @@ import AppKit
 
 struct CachedCoverImage: View {
     let url: URL
+    var width: CGFloat = 60
+    var height: CGFloat = 90
 
     @State private var image: NSImage?
 
@@ -12,7 +14,7 @@ struct CachedCoverImage: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 60, height: 90)
+                    .frame(width: width, height: height)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
             }
