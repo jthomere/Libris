@@ -218,7 +218,9 @@ struct ContentView: View {
         ToolbarItemGroup(placement: .primaryAction) {
             Picker("View", selection: $cardStyle) {
                 Image(systemName: "square.grid.2x2").tag(LibraryCardStyle.full)
+                    .accessibilityLabel("Full cards")
                 Image(systemName: "square.grid.3x3").tag(LibraryCardStyle.mini)
+                    .accessibilityLabel("Mini cards")
             }
             .pickerStyle(.segmented)
             .help("Switch between full and mini cards")

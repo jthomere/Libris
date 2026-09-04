@@ -5,8 +5,6 @@
 
 import SwiftUI
 
-/// How the library grid renders each book: the full detail card, or a compact
-/// cover-forward tile.
 enum LibraryCardStyle: String, CaseIterable {
     case full
     case mini
@@ -24,7 +22,6 @@ struct BookGridView: View {
     /// Moves every currently-visible book to the Trash.
     let onDeleteAllVisible: () -> Void
 
-    // Adaptive grid of book cards, sized to the current card style.
     private var columns: [GridItem] {
         switch style {
         case .full: [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16, alignment: .top)]

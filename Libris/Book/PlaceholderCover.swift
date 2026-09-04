@@ -2,9 +2,6 @@
 //  PlaceholderCover.swift
 //  Libris
 //
-//  A generated "cover" for books without a cover image: title and author set
-//  typographically over a vibrant, per-book gradient.
-//
 
 import SwiftUI
 
@@ -28,39 +25,32 @@ struct PlaceholderCover: View {
         .shadow(color: .black.opacity(0.35), radius: 1, y: 1)
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(gradient)
+        .background(backgroundGradient)
     }
 
     private var title: String { book.title.isEmpty ? "Untitled" : book.title }
     private var author: String { book.author.isEmpty ? "Unknown author" : book.author }
 
-    /// A diagonal gradient with a random-looking (but stable) per-book hue and
-    /// a saturation keyed to status: engaged statuses are vivid, dismissed
-    /// ones drab.
-    private var gradient: LinearGradient {
-        let h = hue
-        let s = saturation
+    private var backgroundGradient: LinearGradient {
+        let hue = coverHue
+        let saturation = statusSaturation
         return LinearGradient(
             colors: [
-                Color(hue: h, saturation: s, brightness: 0.85),
-                Color(hue: (h + 0.08).truncatingRemainder(dividingBy: 1), saturation: min(s + 0.12, 1), brightness: 0.5)
+                Color(hue: hue, saturation: saturation, brightness: 0.85),
+                Color(hue: (hue + 0.08).truncatingRemainder(dividingBy: 1), saturation: min(saturation + 0.12, 1), brightness: 0.5)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 
-    /// A stable 0–1 hue from title + author (djb2), so each book gets its own
-    /// color that survives relaunches and doesn't flicker while scrolling.
-    private var hue: Double {
+    private var coverHue: Double {
         var hash: UInt64 = 5381
         for byte in "\(title)|\(author)".utf8 { hash = (hash &* 33) ^ UInt64(byte) }
         return Double(hash % 360) / 360.0
     }
 
-    /// How vivid the cover is, from anticipation (To Read) down to dismissal
-    /// (Not Interested).
-    private var saturation: Double {
+    private var statusSaturation: Double {
         switch book.status {
         case .toRead:        return 0.85
         case .read:          return 0.70

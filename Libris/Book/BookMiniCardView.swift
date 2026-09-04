@@ -2,8 +2,6 @@
 //  BookMiniCardView.swift
 //  Libris
 //
-//  A compact, cover-forward tile used in the library's Mini view mode.
-//
 
 import SwiftUI
 
@@ -47,8 +45,6 @@ struct BookMiniCardView: View {
         }
     }
 
-    // MARK: - Caption
-
     private var caption: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(book.title.isEmpty ? "Untitled" : book.title)
@@ -64,8 +60,6 @@ struct BookMiniCardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-
-    // MARK: - Bottom bar (rating on the left, edit/delete in the lower-right corner)
 
     private var bottomBar: some View {
         HStack(spacing: 8) {
@@ -87,8 +81,6 @@ struct BookMiniCardView: View {
             .help("Delete this book")
         }
     }
-
-    // MARK: - Status badge (click to change)
 
     private var statusBadge: some View {
         Menu {
@@ -129,8 +121,6 @@ struct BookMiniCardView: View {
         if let status = book.status { return AnyShapeStyle(status.onTint) }
         return AnyShapeStyle(.secondary)
     }
-
-    // MARK: - Cover tile (image, or a status-tinted placeholder)
 
     private struct CoverTile: View {
         let book: Book
