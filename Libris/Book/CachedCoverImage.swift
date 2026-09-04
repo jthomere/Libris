@@ -1,26 +1,19 @@
 import SwiftUI
-import AppKit
 
 struct CachedCoverImage: View {
     let url: URL
-
-    @State private var image: NSImage?
+    var width: CGFloat = 60
+    var height: CGFloat = 90
 
     var body: some View {
-        ZStack {
+        CoverImageLoader(url: url) { image in
             if let image {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 60, height: 90)
+                    .frame(width: width, height: height)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
-            }
-        }
-        .task(id: url) {
-            if let loaded = await CoverImageCache.shared.image(for: url) {
-                guard !Task.isCancelled else { return }
-                image = loaded
             }
         }
     }
