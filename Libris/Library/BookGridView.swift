@@ -24,8 +24,8 @@ struct BookGridView: View {
 
     private var columns: [GridItem] {
         switch style {
-        case .full: [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16, alignment: .top)]
-        case .mini: [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)]
+        case .full: return [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16, alignment: .top)]
+        case .mini: return [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)]
         }
     }
 

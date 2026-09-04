@@ -24,6 +24,8 @@ struct BookMiniCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture { showingPreview = true }
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Show details") { showingPreview = true }
         .contextMenu {
             Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
             Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }
@@ -96,7 +98,7 @@ struct BookMiniCardView: View {
                 }
             }
         } label: {
-            Text(book.status?.label ?? "No status")
+            Text(book.status.facetLabel)
                 .font(.caption2.weight(.semibold))
                 .lineLimit(1)
                 .padding(.horizontal, 7)
