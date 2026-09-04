@@ -27,8 +27,8 @@ struct BookGridView: View {
     // Adaptive grid of book cards, sized to the current card style.
     private var columns: [GridItem] {
         switch style {
-        case .full: [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16)]
-        case .mini: [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16)]
+        case .full: [GridItem(.adaptive(minimum: 360, maximum: 420), spacing: 16, alignment: .top)]
+        case .mini: [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)]
         }
     }
 
@@ -46,7 +46,6 @@ struct BookGridView: View {
                         Section {
                             ForEach(section.books) { book in
                                 card(for: book)
-                                    .frame(maxHeight: .infinity, alignment: .top)
                             }
                         } header: {
                             sectionHeader(section.title)

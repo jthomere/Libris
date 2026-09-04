@@ -153,12 +153,13 @@ struct BookMiniCardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(.quaternary, lineWidth: 1))
                 .task(id: book.coverImageURL) {
-                image = nil
-                guard let url = URLNormalizer.normalized(from: book.coverImageURL) else { return }
-                if let loaded = await CoverImageCache.shared.image(for: url) {
-                    image = loaded
+                    image = nil
+                    guard let url = URLNormalizer.normalized(from: book.coverImageURL) else { return }
+                    if let loaded = await CoverImageCache.shared.image(for: url) {
+                        guard !Task.isCancelled else { return }
+                        image = loaded
+                    }
                 }
-            }
         }
 
     }
