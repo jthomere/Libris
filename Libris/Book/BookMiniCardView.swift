@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AppKit
 
 struct BookMiniCardView: View {
     let book: Book
@@ -135,33 +134,25 @@ struct BookMiniCardView: View {
 
     private struct CoverTile: View {
         let book: Book
-        @State private var image: NSImage?
 
         var body: some View {
-            Color.clear
-                .aspectRatio(2.0 / 3.0, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .overlay {
-                    if let image {
-                        Image(nsImage: image)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        PlaceholderCover(book: book)
+            CoverImageLoader(url: URLNormalizer.normalized(from: book.coverImageURL)) { image in
+                Color.clear
+                    .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .overlay {
+                        if let image {
+                            Image(nsImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            PlaceholderCover(book: book)
+                        }
                     }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(.quaternary, lineWidth: 1))
-                .task(id: book.coverImageURL) {
-                    image = nil
-                    guard let url = URLNormalizer.normalized(from: book.coverImageURL) else { return }
-                    if let loaded = await CoverImageCache.shared.image(for: url) {
-                        guard !Task.isCancelled else { return }
-                        image = loaded
-                    }
-                }
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(.quaternary, lineWidth: 1))
+            }
         }
-
     }
 }
 
