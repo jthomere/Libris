@@ -9,8 +9,8 @@ import Foundation
 
 struct BookSortTests {
 
-    private func book(_ title: String, author: String = "", rating: Double = 0, dateAdded: Date = Date()) -> Book {
-        Book(title: title, author: author, rating: rating, dateAdded: dateAdded)
+    private func book(_ title: String, author: String = "", rating: Double = 0, status: BookStatus? = nil, dateAdded: Date = Date()) -> Book {
+        Book(title: title, author: author, rating: rating, status: status, dateAdded: dateAdded)
     }
 
     private func titles(_ sections: [BookSection]) -> [String] {
@@ -119,5 +119,41 @@ struct BookSortTests {
         let section = BookSort(key: .author, ascending: true).sections(from: books).first
         #expect(section?.title == "H")
         #expect(section?.books.map(\.author) == ["Brian Herbert", "Frank Herbert"])
+    }
+
+    // MARK: - Status
+
+    @Test func statusAscendingOrdersByWorkflowWithNoStatusFirst() {
+        let books = [
+            book("a", status: .notInterested),
+            book("b", status: .toRead),
+            book("c", status: nil),
+            book("d", status: .didNotFinish),
+            book("e", status: .read)
+        ]
+        let sections = BookSort(key: .status, ascending: true).sections(from: books)
+        #expect(sections.map(\.title) == ["No Status", "To Read", "Read", "Did Not Finish", "Not Interested"])
+    }
+
+    @Test func statusDescendingReversesOrderWithNoStatusLast() {
+        let books = [
+            book("a", status: .toRead),
+            book("b", status: nil),
+            book("c", status: .notInterested)
+        ]
+        let sections = BookSort(key: .status, ascending: false).sections(from: books)
+        #expect(sections.map(\.title) == ["Not Interested", "To Read", "No Status"])
+    }
+
+    @Test func statusBucketsNilAsNoStatus() {
+        let sections = BookSort(key: .status, ascending: true).sections(from: [book("a", status: nil)])
+        #expect(sections.map(\.title) == ["No Status"])
+    }
+
+    @Test func withinStatusBreaksTiesByTitle() {
+        let books = [book("Zebra", status: .read), book("Apple", status: .read)]
+        let section = BookSort(key: .status, ascending: true).sections(from: books).first
+        #expect(section?.title == "Read")
+        #expect(section?.books.map(\.title) == ["Apple", "Zebra"])
     }
 }

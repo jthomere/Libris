@@ -41,7 +41,7 @@ struct BookStatusTests {
     }
 
     @Test func actionableListsEveryStatus() {
-        #expect(BookStatus.actionable == [.toRead, .read, .notSure, .didNotFinish, .gaveUp, .notInterested])
+        #expect(BookStatus.actionable == [.toRead, .read, .didNotFinish, .notSure, .gaveUp, .notInterested])
         #expect(Set(BookStatus.actionable) == Set(BookStatus.allCases))
     }
 }
