@@ -11,6 +11,7 @@ struct BookSort: Equatable {
         case title
         case author
         case rating
+        case status
 
         var id: String { rawValue }
 
@@ -20,6 +21,7 @@ struct BookSort: Equatable {
             case .title:     return "Title"
             case .author:    return "Author"
             case .rating:    return "Rating"
+            case .status:    return "Status"
             }
         }
 
@@ -28,6 +30,7 @@ struct BookSort: Equatable {
             case .title, .author: return true    // A→Z
             case .dateAdded:      return false    // newest first
             case .rating:         return false    // highest first
+            case .status:         return true     // No Status → To Read → …
             }
         }
     }
@@ -71,6 +74,7 @@ struct BookSort: Equatable {
         case .author:    return authorKey(a.author).localizedStandardCompare(authorKey(b.author))
         case .dateAdded: return compareValues(a.dateAdded, b.dateAdded)
         case .rating:    return compareValues(a.rating, b.rating)
+        case .status:    return compareValues(a.status.sortRank, b.status.sortRank)
         }
     }
 
@@ -99,6 +103,9 @@ struct BookSort: Equatable {
         case .author:
             let bucket = alphaBucket(authorLastName(book.author))
             return (bucket, bucket)
+        case .status:
+            let status = book.status
+            return (status?.rawValue ?? "no-status", status.facetLabel)
         }
     }
 

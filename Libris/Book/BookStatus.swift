@@ -11,11 +11,11 @@ import SwiftUI
 /// new and imported books, and the state a book returns to when you tap its
 /// currently-active status again.
 enum BookStatus: String, Codable, CaseIterable, Identifiable {
-    case notSure
     case toRead
-    case didNotFinish
-    case gaveUp
     case read
+    case didNotFinish
+    case notSure
+    case gaveUp
     case notInterested
 
     var id: String { rawValue }
@@ -53,10 +53,18 @@ enum BookStatus: String, Codable, CaseIterable, Identifiable {
 
     /// The statuses the user can explicitly assign via buttons. Assigning the
     /// active status again clears it back to `nil` rather than being an action.
-    static var actionable: [BookStatus] { [.toRead, .read, .notSure, .didNotFinish, .gaveUp, .notInterested] }
+    /// Every status is assignable, so this follows the canonical `allCases` order.
+    static var actionable: [BookStatus] { allCases }
 }
 
 extension Optional where Wrapped == BookStatus {
     var facetLabel: String { self?.label ?? "No Status" }
     var facetTint: Color { self?.tint ?? .secondary }
+
+    /// Ordering used when sorting by status: `nil` ("No Status") sorts first,
+    /// then statuses follow the canonical `allCases` order.
+    var sortRank: Int {
+        guard let value = self else { return -1 }
+        return BookStatus.allCases.firstIndex(of: value) ?? 0
+    }
 }
