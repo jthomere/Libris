@@ -8,7 +8,7 @@ struct CoverImageLoader<Content: View>: View {
     @State private var image: NSImage?
 
     var body: some View {
-        content(image)
+        ZStack { content(image) }
             .task(id: url) {
                 image = nil
                 guard let url else { return }
