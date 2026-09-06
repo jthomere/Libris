@@ -7,20 +7,36 @@ import SwiftUI
 
 struct StatusFilterMenu: View {
     @Binding var selection: Set<BookStatus?>
+    @State private var isPresented = false
 
     var body: some View {
-        Menu(currentLabel) {
-            ForEach(BookStatus.allCases) { status in
-                Toggle(status.label, isOn: binding(for: status))
-            }
-
-            Section("Presets") {
-                ForEach(StatusPreset.allCases, id: \.self) { preset in
-                    Button(preset.label) { selection = preset.statuses }
-                }
-            }
+        Button {
+            isPresented.toggle()
+        } label: {
+            Text(currentLabel)
         }
         .help("Filter by reading status")
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(BookStatus.allCases) { status in
+                    Toggle(status.label, isOn: binding(for: status))
+                }
+                .toggleStyle(.checkbox)
+
+                Divider()
+
+                Text("Presets")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    ForEach(StatusPreset.allCases, id: \.self) { preset in
+                        Button(preset.label) { selection = preset.statuses }
+                    }
+                }
+            }
+            .padding()
+            .frame(minWidth: 220, alignment: .leading)
+        }
     }
 
     private var currentLabel: String {
