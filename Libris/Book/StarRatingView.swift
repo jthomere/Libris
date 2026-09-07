@@ -15,13 +15,19 @@ struct StarRatingView: View {
     var body: some View {
         HStack(spacing: 3) {
             ForEach(1...5, id: \.self) { index in
-                Image(systemName: Double(index) <= rating.rounded() ? "star.fill" : "star")
+                Image(systemName: index <= Int(rating) ? "star.fill" : "star")
                     .foregroundStyle(.yellow)
                     .onTapGesture {
                         guard isEditable else { return }
                         let value = Double(index)
                         rating = (rating == value) ? value - 1 : value
                     }
+            }
+            if !isEditable && rating > 0 {
+                Text(rating, format: .number.precision(.fractionLength(1)))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .padding(.leading, 2)
             }
             if isEditable && rating > 0 {
                 Button {
