@@ -95,8 +95,6 @@ struct BookSort: Equatable {
             return (title, title)
         case .rating:
             if book.rating <= 0 { return ("unrated", "Unrated") }
-            // Rated but below one star (0.1–0.9) floors to its own "0 Stars"
-            // bucket, distinct from "Unrated".
             let stars = min(Int(book.rating), 5)
             return ("rating-\(stars)", "\(stars) \(stars == 1 ? "Star" : "Stars")")
         case .title:

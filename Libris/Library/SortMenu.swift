@@ -47,8 +47,6 @@ struct SortMenu: View {
         }
     }
 
-    // Switching keys adopts that key's natural direction (A→Z, newest first, …);
-    // the Order control can then override it.
     private var keyBinding: Binding<BookSort.Key> {
         Binding(
             get: { sort.key },
