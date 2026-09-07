@@ -24,7 +24,7 @@ struct StarRatingView: View {
                     }
             }
             if !isEditable && rating > 0 {
-                Text(rating, format: .number.precision(.fractionLength(1)))
+                Text(rating, format: .number.precision(.fractionLength(1)).rounded(rule: .towardZero))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                     .padding(.leading, 2)
