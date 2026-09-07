@@ -70,7 +70,13 @@ struct BookEditorView: View {
                     }
 
                     labeled("Rating") {
-                        StarRatingView(rating: $rating)
+                        TextField("Rating", value: Binding(
+                            get: { rating },
+                            set: { rating = min(max($0, 0), 5) }
+                        ), format: .number, prompt: Text("0–5"))
+                            .labelsHidden()
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
                     }
 
                     labeled("Description") {
