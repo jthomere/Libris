@@ -60,12 +60,18 @@ struct BookSortTests {
         #expect(sections.map(\.title) == ["Unrated", "1 Star", "4 Stars"])
     }
 
-    @Test func ratingRoundsToNearestStar() {
+    @Test func ratingFloorsToWholeStar() {
         let books = [book("a", rating: 4.5), book("b", rating: 2.4)]
         let sections = BookSort(key: .rating, ascending: false).sections(from: books)
         let byBucket = Dictionary(uniqueKeysWithValues: sections.map { ($0.title, $0.books.map(\.title)) })
-        #expect(byBucket["5 Stars"] == ["a"])   // 4.5 rounds up
-        #expect(byBucket["2 Stars"] == ["b"])   // 2.4 rounds down
+        #expect(byBucket["4 Stars"] == ["a"])   // 4.5 floors to 4, matching the filled stars
+        #expect(byBucket["2 Stars"] == ["b"])   // 2.4 floors to 2
+    }
+
+    @Test func subOneStarRatingBucketsAsZeroStarsNotUnrated() {
+        let books = [book("a", rating: 0.5), book("b", rating: 0)]
+        let sections = BookSort(key: .rating, ascending: false).sections(from: books)
+        #expect(sections.map(\.title) == ["0 Stars", "Unrated"])
     }
 
     @Test func withinRatingBreaksTiesByTitle() {

@@ -95,7 +95,7 @@ struct BookSort: Equatable {
             return (title, title)
         case .rating:
             if book.rating <= 0 { return ("unrated", "Unrated") }
-            let stars = min(max(Int(book.rating.rounded()), 1), 5)
+            let stars = min(Int(book.rating), 5)
             return ("rating-\(stars)", "\(stars) \(stars == 1 ? "Star" : "Stars")")
         case .title:
             let bucket = alphaBucket(book.title)

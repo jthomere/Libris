@@ -7,30 +7,53 @@ import SwiftUI
 
 struct SortMenu: View {
     @Binding var sort: BookSort
+    @State private var isPresented = false
 
     var body: some View {
-        Menu {
-            ForEach(BookSort.Key.allCases) { key in
-                Button {
-                    select(key)
-                } label: {
-                    if sort.key == key {
-                        Label(key.label, systemImage: sort.ascending ? "chevron.up" : "chevron.down")
-                    } else {
-                        Text(key.label)
+        Button {
+            isPresented.toggle()
+        } label: {
+            Label(sort.key.label, systemImage: sort.ascending ? "arrow.up" : "arrow.down")
+                .labelStyle(.titleAndIcon)
+        }
+        .help("Sort the library")
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Sort by")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Picker("Sort by", selection: keyBinding) {
+                    ForEach(BookSort.Key.allCases) { key in
+                        Text(key.label).tag(key)
                     }
                 }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+
+                Divider()
+
+                Text("Order")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Picker("Order", selection: $sort.ascending) {
+                    Text("Ascending").tag(true)
+                    Text("Descending").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-        } label: {
-            Label("Sort", systemImage: "arrow.up.arrow.down")
+            .padding()
+            .frame(minWidth: 220, alignment: .leading)
         }
     }
 
-    private func select(_ key: BookSort.Key) {
-        if sort.key == key {
-            sort.ascending.toggle()
-        } else {
-            sort = BookSort(key: key, ascending: key.startsAscending)
-        }
+    private var keyBinding: Binding<BookSort.Key> {
+        Binding(
+            get: { sort.key },
+            set: { newKey in
+                guard newKey != sort.key else { return }
+                sort = BookSort(key: newKey, ascending: newKey.startsAscending)
+            }
+        )
     }
 }
