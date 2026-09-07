@@ -21,7 +21,7 @@ struct StatusFilterMenu: View {
                 ForEach(BookStatus.allCases) { status in
                     Toggle(status.label, isOn: binding(for: status))
                 }
-                .toggleStyle(.checkbox)
+                Toggle((nil as BookStatus?).facetLabel, isOn: binding(for: nil))
 
                 Divider()
 
@@ -34,6 +34,7 @@ struct StatusFilterMenu: View {
                     }
                 }
             }
+            .toggleStyle(.checkbox)
             .padding()
             .frame(minWidth: 220, alignment: .leading)
         }
